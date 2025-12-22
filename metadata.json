@@ -1,0 +1,8 @@
+{
+  "name": "Savor Studio",
+  "description": "Your intelligent kitchen companion. Manage pantry inventory, reduce waste, and discover contextual recipes tailored to what you have.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
