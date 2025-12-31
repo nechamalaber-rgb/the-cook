@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Send, Loader2, ChefHat, Info, Sparkles } from 'lucide-react';
 import { Ingredient, ChatMessage, Recipe } from '../types';

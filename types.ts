@@ -3,6 +3,7 @@ export enum Category {
   PRODUCE = 'Produce',
   DAIRY = 'Dairy & Eggs',
   MEAT = 'Meat & Protein',
+  BAKERY = 'Bakery & Grains',
   PANTRY = 'Pantry Staples',
   FROZEN = 'Frozen',
   BEVERAGE = 'Beverages',
@@ -14,7 +15,7 @@ export interface Ingredient {
   name: string;
   category: Category;
   quantity: string;
-  expiryDate?: string; // ISO date string
+  expiryDate?: string; 
   addedDate: string;
 }
 
@@ -37,12 +38,8 @@ export interface Recipe {
   protein?: string; 
   matchScore: number; 
   imageUrl?: string;
-}
-
-export interface Substitution {
-  original: string;
-  substitute: string;
-  explanation: string; 
+  isUserCreated?: boolean; 
+  tips?: string[];
 }
 
 export interface ShoppingItem {
@@ -63,13 +60,23 @@ export interface MealLog {
   status?: 'planned' | 'completed';
 }
 
+export interface PendingInvite {
+  email: string;
+  code: string;
+  senderEmail: string;
+  timestamp: string;
+}
+
 export interface UserPreferences {
   userName?: string;
   email?: string; 
   isProMember?: boolean; 
-  subscriptionTier?: 'basic' | 'pro' | 'elite';
-  trialStartedAt?: string; // ISO string
+  subscriptionTier?: 'none' | 'pro' | 'elite';
+  trialStartedAt?: string; 
+  trialUsed?: boolean;
+  dailyUsage?: { date: string; count: number };
   darkMode: boolean; 
+  themeColor?: 'classic' | 'slate' | 'emerald' | 'rose';
   dietaryRestrictions: string[];
   cuisinePreferences: string[];
   allergies: string[];
@@ -84,14 +91,29 @@ export interface UserPreferences {
   };
   measurementSystem: 'Metric' | 'Imperial';
   emailNotifications: boolean;
+  spiceLevel: 'None' | 'Mild' | 'Medium' | 'Hot' | 'Nuclear';
+  budget: 'Thrifty' | 'Moderate' | 'Gourmet';
+  blacklist: string[];
+  householdSize: number;
+  chefPersonality: 'Strict' | 'Creative';
+  generationsCount?: number;
+  
+  referralCode?: string;
+  linkedCode?: string;
+  familyId?: string;
+  activeVerificationCodes?: PendingInvite[];
+  referralRewardsApplied?: number;
 }
 
 export interface RecipeGenerationOptions {
   servings: number;
   mealType: 'Any' | 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack' | 'Dessert';
-  maxTime: 'Any' | '15' | '30' | '45' | '60';
+  maxTime: string;
   excludeRecents?: string[]; 
   customRequest?: string; 
+  recipeCount?: number;
+  complexity?: 'Simple' | 'Gourmet';
+  excludedIngredients?: string[];
 }
 
 export interface ChatMessage {
@@ -99,4 +121,9 @@ export interface ChatMessage {
   role: 'user' | 'model';
   text: string;
   timestamp: Date;
+}
+
+export interface GroundedSource {
+    uri: string;
+    title: string;
 }

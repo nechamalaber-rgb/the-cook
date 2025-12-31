@@ -1,4 +1,5 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   ScanLine, 
@@ -11,157 +12,149 @@ import {
   Calendar,
   Utensils,
   History,
-  CheckCircle2
+  CheckCircle2,
+  Cpu,
+  Eye,
+  Mic,
+  Home
 } from 'lucide-react';
 import { Logo } from './Logo';
 
 const AboutView: React.FC = () => {
   const navigate = useNavigate();
 
-  const steps = [
-    {
-      title: "GATHER",
-      subtitle: "Sync your inventory in seconds.",
-      description: "Snap a photo of your receipt or shelf. Our AI identifies every ingredient, estimates expiry dates, and categorizes your pantry automatically. No more manual typing.",
-      icon: <ScanLine size={32} />,
-      color: "bg-primary-500",
-      lightColor: "bg-primary-50 dark:bg-primary-950/30",
-      textColor: "text-primary-600 dark:text-primary-400"
-    },
-    {
-      title: "PLAN",
-      subtitle: "Smart menus, zero waste.",
-      description: "Chef Gemini reviews your pantry to curate 6 custom recipes. It prioritizes items about to expire, helping you save money and the planet one meal at a time.",
-      icon: <Sparkles size={32} />,
-      color: "bg-accent-500",
-      lightColor: "bg-accent-50 dark:bg-accent-950/30",
-      textColor: "text-accent-600 dark:text-accent-400"
-    },
-    {
-      title: "SHOP",
-      subtitle: "Bridge the gap with one tap.",
-      description: "Missing a staple? Add it to your smart cart. Export your list directly to Walmart or use our Instacart integration to fill your physical cart instantly.",
-      icon: <ShoppingCart size={32} />,
-      color: "bg-emerald-500",
-      lightColor: "bg-emerald-50 dark:bg-emerald-950/30",
-      textColor: "text-emerald-600 dark:text-emerald-400"
-    },
-    {
-      title: "COOK",
-      subtitle: "Voice-guided culinary bliss.",
-      description: "Step into Cook Mode with our hands-free voice assistant. As you finish, we automatically update your inventory so you always know what's in stock.",
-      icon: <ChefHat size={32} />,
-      color: "bg-rose-500",
-      lightColor: "bg-rose-50 dark:bg-rose-950/30",
-      textColor: "text-rose-600 dark:text-rose-400"
-    }
-  ];
-
   return (
-    <div className="animate-fade-in pb-24 max-w-5xl mx-auto px-4">
-      {/* Hero Section */}
-      <section className="text-center py-16 md:py-24">
-        <div className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-full text-xs font-black uppercase tracking-widest text-slate-500 mb-8 border border-slate-200 dark:border-slate-700">
-           <Zap size={14} className="text-primary-500" />
-           Culinary Intelligence Reimagined
+    <div className="animate-fade-in pb-24 max-w-6xl mx-auto px-4">
+      
+      {/* HEADER SECTION */}
+      <section className="text-center py-20 relative">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-primary-100 dark:bg-primary-900/10 rounded-[100%] blur-[120px] opacity-60 pointer-events-none"></div>
+        <div className="relative z-10">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 rounded-full text-[10px] font-black uppercase tracking-widest text-slate-500 mb-8 border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                GatherHome OS 1.0
+            </div>
+            <h1 className="text-6xl md:text-8xl font-black text-slate-900 dark:text-white mb-6 font-serif tracking-tighter leading-[0.9]">
+              The Operating System <br/> <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-accent-500">for Your Kitchen.</span>
+            </h1>
+            <p className="text-xl md:text-2xl text-slate-500 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed mb-12 font-medium">
+              A unified intelligence that manages inventory, curates menus, and orchestrates your culinary life.
+            </p>
+            <div className="flex justify-center gap-4">
+                <button 
+                onClick={() => navigate('/')}
+                className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-10 py-5 rounded-[2rem] font-black text-lg shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center gap-3"
+                >
+                Launch Studio <ArrowRight size={20} />
+                </button>
+            </div>
         </div>
-        <h1 className="text-5xl md:text-7xl font-black text-slate-900 dark:text-white mb-6 font-serif tracking-tight leading-none">
-          Eat better.<br/><span className="text-primary-600">Waste less.</span>
-        </h1>
-        <p className="text-xl text-slate-500 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed mb-10 font-medium">
-          Savor Studio transforms your pantry from a storage space into a creative studio. Manage, plan, and cook with pure intelligence.
-        </p>
-        <button 
-          onClick={() => navigate('/')}
-          className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-10 py-5 rounded-[2rem] font-black text-lg shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center gap-3 mx-auto"
-        >
-          Start Your Kitchen Studio <ArrowRight size={20} />
-        </button>
       </section>
 
-      {/* The Narrative Flow */}
-      <section className="space-y-32 mb-24">
-        {steps.map((step, idx) => (
-          <div key={step.title} className={`flex flex-col ${idx % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'} items-center gap-12 md:gap-20`}>
-            {/* Visual Block */}
-            <div className="flex-1 w-full">
-               <div className={`aspect-square md:aspect-[4/3] ${step.lightColor} rounded-[3rem] border border-slate-200 dark:border-slate-800 flex items-center justify-center relative overflow-hidden group shadow-sm`}>
-                  <div className={`absolute top-0 right-0 w-64 h-64 ${step.color} opacity-5 rounded-full blur-[80px] group-hover:scale-110 transition-transform`}></div>
-                  <div className={`p-10 rounded-[2.5rem] bg-white dark:bg-slate-900 shadow-2xl ${step.textColor} transform group-hover:-rotate-3 transition-transform duration-500`}>
-                      {step.icon}
-                  </div>
-                  
-                  {/* Floating elements for visual interest */}
-                  <div className="absolute bottom-10 left-10 p-4 bg-white dark:bg-slate-900 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-800 flex items-center gap-3 animate-float opacity-0 group-hover:opacity-100 transition-opacity">
-                     <div className={`w-2 h-2 rounded-full ${step.color}`}></div>
-                     <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Processing...</span>
-                  </div>
+      {/* BENTO GRID SHOWCASE */}
+      <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-24">
+          
+          {/* VISION CARD */}
+          <div className="md:col-span-2 bg-slate-900 text-white rounded-[3rem] p-10 md:p-14 relative overflow-hidden group">
+               <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/20 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2"></div>
+               <div className="relative z-10 flex flex-col h-full justify-between">
+                   <div className="mb-12">
+                       <div className="w-16 h-16 bg-white/10 rounded-3xl flex items-center justify-center text-indigo-400 mb-6 backdrop-blur-md border border-white/10">
+                           <ScanLine size={32} />
+                       </div>
+                       <h2 className="text-4xl font-black font-serif mb-4">Vision Intelligence</h2>
+                       <p className="text-slate-400 text-lg max-w-md leading-relaxed">
+                           Don't type. Just snap. Our multimodal intelligence analyzes receipts and pantry shelves to instantly digitize your inventory with 99% accuracy.
+                       </p>
+                   </div>
+                   <div className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-sm max-w-sm ml-auto transform group-hover:-translate-y-2 transition-transform duration-500">
+                       <div className="flex items-center gap-4 mb-4 border-b border-white/10 pb-4">
+                           <div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center"><Eye size={18} className="text-indigo-400"/></div>
+                           <div>
+                               <div className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Scanning</div>
+                               <div className="font-bold">Whole Foods Receipt</div>
+                           </div>
+                       </div>
+                       <div className="space-y-2">
+                           <div className="flex justify-between text-sm font-medium text-slate-300"><span>Org. Avocados</span><span>x4</span></div>
+                           <div className="flex justify-between text-sm font-medium text-slate-300"><span>Almond Milk</span><span>x1</span></div>
+                           <div className="flex justify-between text-sm font-medium text-slate-300"><span>Sourdough</span><span>x1</span></div>
+                       </div>
+                   </div>
                </div>
-            </div>
-
-            {/* Content Block */}
-            <div className="flex-1 text-center md:text-left">
-               <span className={`text-xs font-black tracking-[0.2em] ${step.textColor} mb-4 block`}>STEP {idx + 1}: {step.title}</span>
-               <h2 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-6 font-serif">{step.subtitle}</h2>
-               <p className="text-lg text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
-                 {step.description}
-               </p>
-            </div>
           </div>
-        ))}
-      </section>
 
-      {/* Trust & Tech Section */}
-      <section className="bg-slate-900 dark:bg-white rounded-[3rem] p-12 md:p-20 text-center relative overflow-hidden mb-24">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary-900/40 to-transparent opacity-50"></div>
-          <div className="relative z-10 flex flex-col items-center">
-              <div className="p-4 bg-white/10 dark:bg-slate-100 rounded-3xl mb-8">
-                <Logo className="w-16 h-16 text-white dark:text-slate-900" />
-              </div>
-              <h2 className="text-4xl md:text-5xl font-black text-white dark:text-slate-900 mb-6 font-serif leading-tight">
-                Built with the future of AI.
-              </h2>
-              <p className="text-slate-400 dark:text-slate-500 max-w-xl mx-auto mb-12 text-lg font-medium">
-                We leverage Gemini 3 Pro and Imagen 4 to deliver a culinary experience that understands you perfectly. From analyzing complex grocery receipts to generating high-fidelity food imagery.
-              </p>
-              
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full max-w-3xl">
-                  {[
-                    { label: "Vision", val: "Multimodal Analysis" },
-                    { label: "Brain", val: "Gemini 3 Pro" },
-                    { label: "Visuals", val: "Imagen 4.0" },
-                    { label: "Voice", val: "Real-time TTS" }
-                  ].map(item => (
-                    <div key={item.label} className="p-4 rounded-2xl bg-white/5 dark:bg-slate-100 border border-white/10 dark:border-slate-200">
-                        <div className="text-[10px] font-black uppercase text-primary-400 mb-1">{item.label}</div>
-                        <div className="text-xs font-bold text-white dark:text-slate-700">{item.val}</div>
+          {/* GENERATION CARD */}
+          <div className="bg-white dark:bg-slate-900 rounded-[3rem] p-10 relative overflow-hidden border border-slate-200 dark:border-slate-800 shadow-sm group">
+               <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-primary-50 dark:from-primary-900/20 to-transparent"></div>
+               <div className="relative z-10">
+                   <div className="w-14 h-14 bg-primary-100 dark:bg-primary-900/30 rounded-2xl flex items-center justify-center text-primary-600 mb-6">
+                       <Sparkles size={28} />
+                   </div>
+                   <h2 className="text-3xl font-black font-serif mb-4 text-slate-900 dark:text-white">Studio Chef</h2>
+                   <p className="text-slate-500 dark:text-slate-400 leading-relaxed mb-8">
+                       Context-aware recipe generation that respects your allergies, appliances, and goals.
+                   </p>
+                   <div className="space-y-3">
+                       {['Zero Waste', 'Macro-Balanced', 'Cuisine Specific'].map((tag, i) => (
+                           <div key={i} className="flex items-center gap-3 text-sm font-bold text-slate-700 dark:text-slate-300">
+                               <CheckCircle2 size={16} className="text-primary-500" /> {tag}
+                           </div>
+                       ))}
+                   </div>
+               </div>
+          </div>
+
+          {/* LOGISTICS CARD */}
+          <div className="bg-white dark:bg-slate-900 rounded-[3rem] p-10 relative overflow-hidden border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+               <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-[60px] -translate-y-1/2 translate-x-1/2"></div>
+               <div>
+                    <div className="w-14 h-14 bg-emerald-100 dark:bg-emerald-900/30 rounded-2xl flex items-center justify-center text-emerald-600 mb-6">
+                        <ShoppingCart size={28} />
                     </div>
-                  ))}
-              </div>
+                    <h2 className="text-3xl font-black font-serif mb-4 text-slate-900 dark:text-white">Auto Logistics</h2>
+                    <p className="text-slate-500 dark:text-slate-400 leading-relaxed">
+                        Export your grocery needs to Instacart or Walmart.
+                    </p>
+               </div>
+               <div className="mt-8 pt-8 border-t border-slate-100 dark:border-slate-800 flex gap-4 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
+                    <div className="h-8 w-20 bg-slate-200 dark:bg-slate-800 rounded-lg"></div>
+                    <div className="h-8 w-20 bg-slate-200 dark:bg-slate-800 rounded-lg"></div>
+               </div>
+          </div>
+
+          {/* VOICE CARD */}
+          <div className="md:col-span-2 bg-slate-100 dark:bg-slate-800 rounded-[3rem] p-10 md:p-14 relative overflow-hidden flex flex-col md:flex-row items-center gap-10">
+               <div className="flex-1">
+                   <div className="w-16 h-16 bg-rose-500 text-white rounded-3xl flex items-center justify-center mb-6 shadow-xl shadow-rose-500/20">
+                       <Mic size={32} />
+                   </div>
+                   <h2 className="text-4xl font-black font-serif mb-4 text-slate-900 dark:text-white">Hands-Free Studio</h2>
+                   <p className="text-slate-500 dark:text-slate-400 text-lg leading-relaxed mb-8">
+                       Cooking is messy. Use our voice-guided mode to step through recipes without touching your screen.
+                   </p>
+                   <button onClick={() => navigate('/')} className="px-6 py-3 bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-sm hover:scale-105 transition-transform">Enter Cook Mode</button>
+               </div>
+               <div className="flex-1 flex justify-center">
+                    <div className="w-64 h-64 bg-white dark:bg-slate-900 rounded-full flex items-center justify-center relative">
+                        <div className="absolute inset-0 border-4 border-rose-500/20 rounded-full animate-ping" style={{animationDuration: '3s'}}></div>
+                        <div className="absolute inset-4 border-4 border-rose-500/40 rounded-full animate-ping" style={{animationDuration: '3s', animationDelay: '0.5s'}}></div>
+                        <ChefHat size={64} className="text-rose-500 relative z-10" />
+                    </div>
+               </div>
           </div>
       </section>
 
-      {/* CTA Footer */}
-      <section className="text-center py-10">
-          <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-8 font-serif">Ready to transform your kitchen?</h3>
-          <button 
-            onClick={() => navigate('/')}
-            className="px-12 py-5 bg-primary-600 text-white rounded-full font-black text-xl shadow-xl shadow-primary-900/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
-          >
-            Create Your First Menu
-          </button>
-          <p className="mt-6 text-slate-400 text-sm font-medium italic">Join thousands of home chefs cooking smarter.</p>
+      {/* TECH STACK FOOTER */}
+      <section className="text-center pb-20">
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-8">Powered By Next-Gen Infrastructure</p>
+          <div className="flex flex-wrap justify-center gap-4 md:gap-12 opacity-50">
+             <div className="flex items-center gap-2 font-bold text-slate-600 dark:text-slate-400"><Cpu size={16}/> Neural Engine 3.0</div>
+             <div className="flex items-center gap-2 font-bold text-slate-600 dark:text-slate-400"><Eye size={16}/> Vision 4.0</div>
+             <div className="flex items-center gap-2 font-bold text-slate-600 dark:text-slate-400"><Zap size={16}/> React 19</div>
+          </div>
       </section>
 
-      <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes float {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-10px); }
-        }
-        .animate-float {
-          animation: float 3s ease-in-out infinite;
-        }
-      `}} />
     </div>
   );
 };
