@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { 
   Sparkles, ChefHat, Clock, Flame, 
   Loader2, MessageSquarePlus, 
-  Dice5, Heart, Activity, Eye, ShieldCheck, Users, BookOpen, Calendar, Utensils, Timer, Plus, X, ListPlus, Save, Trash2, ArrowRight, PenLine, Ban, Package, ChevronRight, Check, Coffee, ScrollText, SlidersHorizontal
+  Dice5, Heart, Activity, Eye, ShieldCheck, Users, BookOpen, Calendar, Utensils, Timer, Plus, X, ListPlus, Save, Trash2, ArrowRight, PenLine, Ban, Package, ChevronRight, Check, Coffee, ScrollText, SlidersHorizontal, Settings
 } from 'lucide-react';
 import { Logo } from './Logo';
 import { Ingredient, Recipe, UserPreferences, MealLog, RecipeGenerationOptions, Category } from '../types';
@@ -40,6 +40,7 @@ interface DashboardViewProps {
   onToggleSave: (recipe: Recipe) => void;
   isGenerating: boolean;
   onGenerate: (options: RecipeGenerationOptions) => Promise<void>;
+  onCancelGeneration: () => void;
   onRequireAccess: (action: string) => boolean;
 }
 
@@ -55,6 +56,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   onScheduleMeal,
   isGenerating,
   onGenerate,
+  onCancelGeneration,
   onRequireAccess
 }) => {
   const navigate = useNavigate();
@@ -86,7 +88,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
     mealType: 'Any',
     maxTime: 'Any',
     customRequest: '',
-    complexity: 'Simple'
+    complexity: preferences.skillLevel === 'Advanced' ? 'Gourmet' : 'Simple'
   });
 
   const [excludeInput, setExcludeInput] = useState('');
@@ -270,11 +272,18 @@ const DashboardView: React.FC<DashboardViewProps> = ({
               
               <div className="relative z-10">
                   <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 border-b border-slate-100 dark:border-slate-800 pb-6">
-                       <div>
+                       <div className="flex items-center gap-3">
                            <h2 className="text-2xl font-black font-serif text-slate-900 dark:text-white flex items-center gap-3">
                                <SlidersHorizontal size={24} className="text-primary-500" />
                                Studio Parameters
                            </h2>
+                           <button 
+                             onClick={() => navigate('/settings')}
+                             className="p-2 text-slate-400 hover:text-primary-500 transition-colors"
+                             title="Intelligence Settings"
+                           >
+                             <Settings size={18} />
+                           </button>
                        </div>
                        
                        <div className="bg-slate-100 dark:bg-slate-800 p-1 rounded-xl flex gap-1 self-start md:self-auto">
@@ -401,7 +410,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                       </button>
                       <button onClick={() => handleStartGeneration(false)} disabled={isGenerating} className="flex-1 w-full py-4 px-10 rounded-2xl font-black text-xs tracking-widest uppercase transition-all flex items-center justify-center gap-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-xl disabled:opacity-80 active:scale-95 hover:bg-slate-800 dark:hover:bg-slate-200">
                           {isGenerating ? <Loader2 className="animate-spin" /> : <Sparkles size={18} />}
-                          {isGenerating ? 'Curating Menu...' : 'Generate Studio Recipes'}
+                          {isGenerating ? 'Curating Menu...' : `Generate ${preferences.generationsCount || 3} Studio Recipes`}
                       </button>
                   </div>
               </div>

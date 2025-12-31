@@ -24,7 +24,14 @@ export const organizePastedText = async (text: string): Promise<{ name: string; 
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `Structure this list. JSON format: [{name, quantity, category}]. Items: "${text}"`,
+      contents: `STRICT RULE: Extract ONLY edible food or drink items. 
+      CRITICAL: IGNORE non-food items like 'shelves', 'cabinets', 'bins', 'organizers', 'containers', 'furniture', or 'cleaning supplies'.
+      If you see a storage bin, do NOT include it.
+      Categories must be: Produce, Dairy & Eggs, Meat & Protein, Bakery & Grains, Pantry Staples, Frozen, Beverages, Other.
+      Note: Milk, Cheese, Yogurt, Eggs must be 'Dairy & Eggs'.
+      Note: Soda, Water, Tea, Coffee, Juice must be 'Beverages'.
+      JSON format: [{name, quantity, category}].
+      Items: "${text}"`,
       config: { 
         responseMimeType: 'application/json',
         thinkingConfig: { thinkingBudget: 0 }
@@ -43,22 +50,14 @@ export const generateSmartRecipes = async (pantryItems: Ingredient[], preference
   
   const instructions = `
     ROLE: Master of Classic & Appetizing Cuisine.
+    GOAL: Create EXACTLY ${count} unique recipes that look and sound DELICIOUS.
+    STRICT INVENTORY RULE: Use ONLY these items: [${sanitizedPantry}].
+    SERVINGS PER DISH: ${servings}.
+    ADDITIONAL CONTEXT: ${options?.customRequest || 'None'}.
+    DIETARY RESTRICTIONS: ${preferences.dietaryRestrictions.join(', ') || 'None'}.
+    KOSHER RULES: ${preferences.isKosher ? 'Strictly Kosher (no meat/dairy mixing, no pork/shellfish)' : 'None'}.
     
-    GOAL: Create meals that look and sound DELICIOUS, HEARTY, and REAL.
-    STRICT RULE: Avoid weird culinary experiments. Do NOT suggest "deconstructed" versions, "custards," "souffles" (unless it's a traditional souffle), or "gratins" made of random things.
-    
-    STYLE: Focus on "Bistro Classics" and "Expert Home Cooking." Make the user WANT to eat this food. Use recognizable names. 
-    Examples: "Pan-Seared Chicken with Lemon-Wilted Spinach" (GOOD) vs "Chicken and Spinach Essence Gratin" (BAD).
-    
-    STRICT INVENTORY RULE: 
-    - Use ONLY these items: [${sanitizedPantry}].
-    - ONLY STAPLES ALLOWED: Salt, Black Pepper, Water, Vegetable Oil.
-    - If Butter, Garlic, or Onion are not in the list, DO NOT use them.
-    - NO PHANTOM GARNISHES.
-    
-    TASK: Generate ${count} satisfying, classic recipes for ${servings} people.
-    
-    OUTPUT: JSON array of recipe objects.
+    OUTPUT: A JSON array containing exactly ${count} recipe objects.
   `;
 
   try {
@@ -90,26 +89,21 @@ export const generateSmartRecipes = async (pantryItems: Ingredient[], preference
       }
     });
     return JSON.parse(cleanJsonString(response.text || "[]"));
-  } catch (error) { return []; }
+  } catch (error) { 
+    console.error("Gemini Recipe Generation Error:", error);
+    return []; 
+  }
 };
 
 export const generateRecipeImage = async (recipe: Recipe, subscriptionTier: string = 'none'): Promise<string | undefined> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    const ingredientsUsed = recipe.ingredients.join(', ');
+    const imagePrompt = `High-quality food photography of: ${recipe.title}. 
+    STRICT INGREDIENT RULE: ONLY show ingredients from this list: ${recipe.ingredients.join(', ')}. 
+    NO PHANTOM GARNISHES.`;
     
-    const imagePrompt = `Extremely appetizing, high-quality, warm food photography of: ${recipe.title}. 
-    VISUAL STYLE: Rustic, inviting, and mouth-watering. Vibrant natural colors. 
-    LIGHTING: Warm, soft natural light (like a high-end bistro window). 
-    PLATING: Clean but hearty presentation. The food must look freshly cooked and delicious. 
-    STRICT INGREDIENT RULE: ONLY show ingredients from this list: ${ingredientsUsed}. 
-    NO PHANTOM GARNISHES. No parsley if not in list. 
-    AVOID: Grayish colors, messy plating, weird textures, or unappetizing "fine dining" smears.`;
-    
-    const model = 'gemini-2.5-flash-image';
-
     try {
         const response = await ai.models.generateContent({
-            model: model,
+            model: 'gemini-2.5-flash-image',
             contents: { parts: [{ text: imagePrompt }] },
             config: { imageConfig: { aspectRatio: "1:1" } }
         });
@@ -170,7 +164,13 @@ export const parseReceiptOrImage = async (base64Image: string): Promise<{ items:
       contents: {
         parts: [
           { inlineData: { data: base64Image, mimeType: 'image/jpeg' } },
-          { text: `Extract items. JSON format: { "items": [{ "name", "category", "quantity" }] }.` }
+          { text: `STRICT RULE: Extract ONLY food or drink items. 
+          CRITICAL: IGNORE kitchen furniture, storage containers, bins, shelves, cabinets, or hardware.
+          DO NOT include "Shelves", "Storage Bins", or "Cabinets" in the results.
+          Identify Milk, Eggs, Cheese as 'Dairy & Eggs'.
+          Identify Water, Soda, Juice as 'Beverages'.
+          JSON format: { "items": [{ "name", "category", "quantity" }] }.
+          Valid Categories: Produce, Dairy & Eggs, Meat & Protein, Bakery & Grains, Pantry Staples, Frozen, Beverages, Other.` }
         ],
       },
       config: { 
@@ -238,7 +238,7 @@ export const generateShoppingSuggestions = async (pantryItems: Ingredient[], rec
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `Suggest 5 restock items.`,
+      contents: `Suggest 5 restock items based on pantry. JSON format: [{name: string}].`,
       config: {
         responseMimeType: "application/json",
         thinkingConfig: { thinkingBudget: 0 }
@@ -253,7 +253,7 @@ export const generateWeeklyPlan = async (pantryItems: Ingredient[], preferences:
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `3-day meal plan.`,
+      contents: `3-day meal plan. JSON format.`,
       config: {
         responseMimeType: "application/json",
         thinkingConfig: { thinkingBudget: 0 }

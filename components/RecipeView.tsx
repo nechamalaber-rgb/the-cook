@@ -71,6 +71,10 @@ const RecipeView: React.FC<RecipeViewProps> = ({
   savedRecipes,
   onToggleSave,
   onLogMeal,
+  /* Destructured missing props from interface to avoid TS warnings */
+  onScheduleMeal,
+  generatedRecipes,
+  setGeneratedRecipes,
   selectedRecipe,
   setSelectedRecipe,
   cookingMode,

@@ -4,7 +4,6 @@ import { Plus, Trash2, Loader2, Package, ScanLine, Calendar, X, Box, ListPlus, T
 import { Ingredient, Category, Pantry, UserPreferences } from '../types';
 import { parseReceiptOrImage, organizePastedText } from '../services/geminiService';
 
-// Add the missing PantryViewProps interface
 interface PantryViewProps {
   pantries: Pantry[];
   activePantryId: string;
@@ -21,7 +20,7 @@ const getCategoryColor = (category: string) => {
         case Category.MEAT: return 'bg-rose-500';
         case Category.DAIRY: return 'bg-sky-500';
         case Category.BAKERY: return 'bg-amber-700';
-        case Category.PANTRY: return 'bg-amber-500';
+        case Category.PANTRY: return 'bg-amber-50';
         case Category.FROZEN: return 'bg-indigo-500';
         case Category.BEVERAGE: return 'bg-violet-500';
         default: return 'bg-slate-400';
@@ -30,14 +29,25 @@ const getCategoryColor = (category: string) => {
 
 const autoCategorize = (name: string): Category => {
     const lower = name.toLowerCase();
-    // Specific detection for "Vessels"
-    if (lower.match(/bagel|bread|toast|sourdough|tortilla|wrap|roll|bun|muffin|pita|naan|baguette|ciabatta|croissant|focaccia/)) return Category.BAKERY;
     
-    if (lower.match(/apple|banana|fruit|veg|spinach|lettuce|tomato|onion|garlic|potato|carrot|pepper|salad|berry|lemon|lime|broccoli|cabbage|cucumber|mushroom|kale|zucchini|asparagus/)) return Category.PRODUCE;
-    if (lower.match(/milk|cheese|egg|yogurt|butter|cream|dairy|curd|sour cream|parmesan|mozzarella|cheddar|brie|feta/)) return Category.DAIRY;
+    // Dairy & Eggs Priority
+    if (lower.match(/milk|cheese|egg|yogurt|butter|cream|dairy|curd|sour cream|parmesan|mozzarella|cheddar|brie|feta|goat|ricotta|heavy cream|half and half/)) return Category.DAIRY;
+    
+    // Beverages
+    if (lower.match(/water|soda|juice|beer|wine|coffee|tea|drink|sparkling|kombucha|s.pellegrino|san pellegrino|peligrino|cola|pepsi|coke/)) return Category.BEVERAGE;
+
+    // Bakery
+    if (lower.match(/bagel|bread|toast|sourdough|tortilla|wrap|roll|bun|muffin|pita|naan|baguette|ciabatta|croissant|focaccia|chips|potato chips|snack/)) return Category.BAKERY;
+    
+    // Produce
+    if (lower.match(/apple|banana|fruit|veg|spinach|lettuce|tomato|onion|garlic|potato|carrot|pepper|salad|berry|lemon|lime|broccoli|cabbage|cucumber|mushroom|kale|zucchini|asparagus|cilantro|parsley/)) return Category.PRODUCE;
+    
+    // Meat
     if (lower.match(/chicken|beef|pork|meat|fish|salmon|tuna|steak|sausage|bacon|turkey|shrimp|lamb|prawn|tilapia|ham/)) return Category.MEAT;
+    
+    // Frozen
     if (lower.match(/frozen|ice|pizza|nugget|peas|sortet|gelato|waffle/)) return Category.FROZEN;
-    if (lower.match(/water|soda|juice|beer|wine|coffee|tea|drink|sparkling|kombucha/)) return Category.BEVERAGE;
+    
     return Category.PANTRY; 
 };
 
@@ -77,8 +87,15 @@ const PantryView: React.FC<PantryViewProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const mergeItems = (existing: Ingredient[], incoming: Ingredient[]): Ingredient[] => {
+    // RUTHLESS FILTER: Filter out cabinets, bins, organizers, etc.
+    const foodOnly = incoming.filter(i => {
+        const n = i.name.toLowerCase();
+        const forbidden = ['shelf', 'cabinet', 'bin', 'storage', 'organizer', 'drawer', 'furniture', 'hardware', 'plastic box', 'clear box'];
+        return !forbidden.some(word => n.includes(word));
+    });
+
     const result = [...existing];
-    incoming.forEach(newItem => {
+    foodOnly.forEach(newItem => {
         const existingIndex = result.findIndex(i => i.name.toLowerCase() === newItem.name.toLowerCase());
         if (existingIndex !== -1) {
             const oldQ = parseQuantity(result[existingIndex].quantity);
@@ -98,11 +115,7 @@ const PantryView: React.FC<PantryViewProps> = ({
 
   const handleManualAdd = () => {
     if (!newItemName) return;
-    
-    const names = newItemName.includes(',') 
-        ? newItemName.split(',').map(n => n.trim()).filter(n => n)
-        : [newItemName.trim()];
-
+    const names = newItemName.includes(',') ? newItemName.split(',').map(n => n.trim()).filter(n => n) : [newItemName.trim()];
     const incoming: Ingredient[] = names.map((name, idx) => ({
       id: (Date.now() + idx).toString(),
       name,
@@ -111,9 +124,7 @@ const PantryView: React.FC<PantryViewProps> = ({
       addedDate: new Date().toISOString().split('T')[0],
       expiryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     }));
-
     setItems(prev => mergeItems(prev, incoming));
-    
     setNewItemName('');
     setNewItemQuantity('1');
     setIsAdding(false);
@@ -131,7 +142,6 @@ const PantryView: React.FC<PantryViewProps> = ({
     setIsProcessingBulk(true);
     try {
         const organized = await organizePastedText(bulkList);
-        
         const incoming: Ingredient[] = organized.map((item, idx) => ({
             id: `bulk-${Date.now()}-${idx}`,
             name: item.name,
@@ -140,15 +150,24 @@ const PantryView: React.FC<PantryViewProps> = ({
             addedDate: new Date().toISOString().split('T')[0],
             expiryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
         }));
-
         setItems(prev => mergeItems(prev, incoming));
         setBulkList('');
         setIsAdding(false);
-    } catch (e) {
-        console.error("AI parse failed", e);
-    } finally {
-        setIsProcessingBulk(false);
-    }
+    } catch (e) { console.error(e); } finally { setIsProcessingBulk(false); }
+  };
+
+  const normalizeCategory = (inputCat: string, nameHint: string): Category => {
+      const lowerHint = nameHint.toLowerCase();
+      if (lowerHint.match(/milk|cheese|egg|yogurt|butter|cream|dairy/)) return Category.DAIRY;
+      if (lowerHint.match(/water|soda|juice|beer|wine|coffee|tea|drink|sparkling/)) return Category.BEVERAGE;
+      if (lowerHint.match(/bread|bagel|toast|sourdough|chips/)) return Category.BAKERY;
+      
+      const lowerCat = inputCat.toLowerCase();
+      if (lowerCat.match(/dairy|egg/)) return Category.DAIRY;
+      if (lowerCat.match(/bev|drink|liquid/)) return Category.BEVERAGE;
+      if (lowerCat.includes('produce') || lowerCat.includes('fruit') || lowerCat.includes('veg')) return Category.PRODUCE;
+      if (lowerCat.includes('meat') || lowerCat.includes('chicken') || lowerCat.includes('beef')) return Category.MEAT;
+      return autoCategorize(nameHint);
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -165,7 +184,7 @@ const PantryView: React.FC<PantryViewProps> = ({
         const incoming: Ingredient[] = result.items.map((item, idx) => ({
           id: Date.now().toString() + idx,
           name: item.name,
-          category: normalizeCategory(item.category || item.name),
+          category: normalizeCategory(item.category || '', item.name),
           quantity: item.quantity,
           addedDate: new Date().toISOString().split('T')[0]
         }));
@@ -175,7 +194,6 @@ const PantryView: React.FC<PantryViewProps> = ({
   };
 
   const handleDelete = (id: string) => setItems(prev => prev.filter(item => item.id !== id));
-
   const adjustQuantity = (id: string, delta: number) => {
       setItems(prev => prev.map(item => {
           if (item.id !== id) return item;
@@ -184,16 +202,6 @@ const PantryView: React.FC<PantryViewProps> = ({
           if (newNum === 0) return item; 
           return { ...item, quantity: suffix ? `${newNum} ${suffix}`.trim() : `${newNum}` };
       }));
-  };
-
-  const normalizeCategory = (inputCat: string): Category => {
-      if (!inputCat) return Category.OTHER;
-      const lower = inputCat.toLowerCase();
-      if (lower.includes('bakery') || lower.includes('bread')) return Category.BAKERY;
-      if (lower.includes('produce') || lower.includes('fruit') || lower.includes('veg')) return Category.PRODUCE;
-      if (lower.includes('dairy') || lower.includes('egg') || lower.includes('cheese') || lower.includes('milk')) return Category.DAIRY;
-      if (lower.includes('meat') || lower.includes('chicken') || lower.includes('beef')) return Category.MEAT;
-      return autoCategorize(inputCat);
   };
 
   const filteredItems = items.filter(item => {
@@ -227,12 +235,10 @@ const PantryView: React.FC<PantryViewProps> = ({
                     className="w-full bg-slate-100 dark:bg-slate-900 border-none outline-none pl-10 pr-4 py-3 rounded-2xl text-sm font-bold placeholder:text-slate-400 focus:ring-2 focus:ring-primary-500/20 transition-all"
                  />
              </div>
-
             <button onClick={() => fileInputRef.current?.click()} className="p-3 bg-white dark:bg-slate-900 rounded-2xl text-slate-400 hover:text-primary-600 transition-all border border-slate-200 dark:border-slate-800 shadow-sm">
                 {isScanning ? <Loader2 size={20} className="animate-spin" /> : <ScanLine size={20} />}
             </button>
             <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileUpload} />
-            
             <button onClick={() => setIsAdding(true)} className="flex items-center justify-center gap-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-5 py-3 rounded-2xl font-black shadow-lg hover:scale-105 transition-all">
                 <Plus size={18} />
                 <span className="text-xs uppercase tracking-widest hidden sm:inline">Add Item</span>
@@ -302,11 +308,11 @@ const PantryView: React.FC<PantryViewProps> = ({
                   );
               }
               return (
-                  <div key={item.id} className="group relative bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 hover:shadow-lg hover:border-primary-200 dark:hover:border-primary-900 transition-all duration-300 flex flex-col justify-between aspect-square">
-                      <div className={`w-6 h-6 rounded-lg ${categoryColor} bg-opacity-10 flex items-center justify-center`}>
+                  <div key={item.id} className="group relative bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 hover:shadow-lg hover:border-primary-200 dark:hover:border-primary-900 transition-all duration-300 flex flex-col justify-between aspect-square text-center">
+                      <div className={`w-6 h-6 rounded-lg ${categoryColor} bg-opacity-10 flex items-center justify-center mx-auto mb-2`}>
                            <div className={`w-1.5 h-1.5 rounded-full ${categoryColor}`}></div>
                       </div>
-                      <div className="text-center my-1 flex-1 flex flex-col justify-center">
+                      <div className="my-1 flex-1 flex flex-col justify-center px-1">
                           <h3 className="font-bold text-slate-900 dark:text-white text-sm leading-tight line-clamp-2">{item.name}</h3>
                           <p className="text-[8px] font-black uppercase text-slate-400 tracking-wider mt-1">{item.category}</p>
                       </div>
@@ -338,7 +344,7 @@ const PantryView: React.FC<PantryViewProps> = ({
                     <div className="space-y-6">
                         <div>
                             <label className="text-xs font-black uppercase tracking-widest text-slate-400 mb-2 block">Item Name(s)</label>
-                            <input autoFocus type="text" value={newItemName} onChange={e => setNewItemName(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl outline-none border border-slate-200 dark:border-slate-700 font-bold dark:text-white focus:border-primary-500 transition-all text-lg" placeholder="e.g. Bagel, Cream Cheese" />
+                            <input autoFocus type="text" value={newItemName} onChange={e => setNewItemName(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl outline-none border border-slate-200 dark:border-slate-700 font-bold dark:text-white focus:border-primary-500 transition-all text-lg" placeholder="e.g. Eggs, Milk, Bread" />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
@@ -359,7 +365,7 @@ const PantryView: React.FC<PantryViewProps> = ({
                     <div className="space-y-6">
                         <div>
                             <label className="text-xs font-black uppercase tracking-widest text-slate-400 mb-2 block">Paste Shopping List</label>
-                            <textarea autoFocus value={bulkList} onChange={e => setBulkList(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl outline-none border border-slate-200 dark:border-slate-700 font-bold dark:text-white focus:border-primary-500 transition-all h-40 resize-none text-sm" placeholder="5 eggs, 2 lbs chicken, 1 bag flour..." />
+                            <textarea autoFocus value={bulkList} onChange={e => setBulkList(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl outline-none border border-slate-200 dark:border-slate-700 font-bold dark:text-white focus:border-primary-500 transition-all h-40 resize-none text-sm" placeholder="1 dozen eggs, 1 gallon milk, 2 lbs chicken..." />
                         </div>
                         <button 
                             onClick={handleBulkAdd} 
