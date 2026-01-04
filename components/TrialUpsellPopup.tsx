@@ -101,7 +101,7 @@ const TrialUpsellPopup: React.FC<TrialUpsellPopupProps> = ({ onClose, onClaim })
                       <input 
                         readOnly
                         className="bg-transparent outline-none text-white font-bold w-full placeholder:text-white/20 text-sm" 
-                        placeholder="chef@gatherhome.studio" 
+                        placeholder="chef@prepzu.studio" 
                       />
                   </div>
               </div>

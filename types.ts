@@ -1,4 +1,3 @@
-
 export enum Category {
   PRODUCE = 'Produce',
   DAIRY = 'Dairy & Eggs',

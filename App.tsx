@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect, Suspense, lazy, useMemo } from 'react';
 import { Routes, Route, NavLink, useLocation, useNavigate, Navigate } from 'react-router-dom';
-import { ShoppingBag, Settings, Home as HomeIcon, Sparkles, Loader2, LogOut, Calendar as CalendarIcon, LayoutGrid, Mail, Phone, X, Diamond, Zap, LogIn, Crown, CheckCircle2, Clock, Flame, Timer, ArrowRight, LifeBuoy, BookOpen, CreditCard, AlertCircle, Info, Lightbulb } from 'lucide-react';
+import { ShoppingBag, Settings, Home as HomeIcon, Sparkles, Loader2, LogOut, Calendar as CalendarIcon, LayoutGrid, Mail, Phone, X, Diamond, Zap, LogIn, Crown, CheckCircle2, Clock, Flame, Timer, ArrowRight, LifeBuoy, BookOpen, CreditCard, AlertCircle, Info, Lightbulb, MessageCircle, Gift, AlertOctagon, BellRing } from 'lucide-react';
 import { Logo } from './components/Logo';
 import { Ingredient, ShoppingItem, UserPreferences, Category, Recipe, Pantry, MealLog, RecipeGenerationOptions } from './types';
 import SignInView from './components/SignInView';
@@ -37,6 +36,7 @@ const DEFAULT_PREFS: UserPreferences = {
   skillLevel: 'Intermediate',
   strictness: 'Strict',
   isKosher: false,
+  // Fix: Assign a single value from the allowed options instead of using bitwise OR which incorrectly results in 0 (number)
   healthGoal: 'Maintain',
   nutritionalGoals: { maxCaloriesPerMeal: '', minProteinPerMeal: '' },
   measurementSystem: 'Imperial',
@@ -68,6 +68,7 @@ const App: React.FC = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'signup'>('signup');
   const [isInitialized, setIsInitialized] = useState(false);
+  const [showTrialToast, setShowTrialToast] = useState(false);
 
   const [pantries, setPantries] = useState<Pantry[]>([]);
   const [activePantryId, setActivePantryId] = useState<string>('default');
@@ -81,7 +82,6 @@ const App: React.FC = () => {
   const [cookingStep, setCookingStep] = useState(0);
   const [recipeTab, setRecipeTab] = useState<'discover' | 'saved'>('discover');
   const [preferences, setPreferences] = useState<UserPreferences>(DEFAULT_PREFS);
-  const [showPantryTip, setShowPantryTip] = useState(false);
 
   useEffect(() => {
     setIsInitialized(false); 
@@ -142,22 +142,29 @@ const App: React.FC = () => {
 
   const isTrialExpired = () => {
     if (!preferences.trialStartedAt) return false;
+    if (preferences.subscriptionTier === 'pro' || preferences.subscriptionTier === 'elite') return false;
     return getDaysRemaining() <= 0;
   };
+
+  const daysRemaining = getDaysRemaining();
+  const isTrialFinished = isTrialExpired();
+  const isTrialActive = preferences.trialStartedAt && daysRemaining > 0 && !preferences.isProMember;
+  const showTrialButton = !preferences.isProMember && !preferences.trialStartedAt;
+
+  useEffect(() => {
+    if (!isTrialActive || showLanding) return;
+
+    const interval = setInterval(() => {
+      setShowTrialToast(true);
+      setTimeout(() => setShowTrialToast(false), 8000);
+    }, 120000);
+
+    return () => clearInterval(interval);
+  }, [isTrialActive, showLanding]);
 
   const activePantry = useMemo(() => {
     return pantries.find(p => p.id === activePantryId) || { id: 'default', name: 'Main Kitchen', items: [] };
   }, [pantries, activePantryId]);
-
-  // Day 2 Trigger logic
-  useEffect(() => {
-    if (isInitialized && preferences.trialStartedAt && !isTrialExpired()) {
-        const daysRem = getDaysRemaining();
-        if (daysRem <= 2 && daysRem > 1 && activePantry.items.length < 5) {
-            setShowPantryTip(true);
-        }
-    }
-  }, [isInitialized, preferences.trialStartedAt, activePantry.items.length]);
 
   const checkAccess = (actionName: string = "To use this feature", featureType: 'basic' | 'planner' | 'logging' | 'generate' | 'shopping_export' = 'basic'): boolean => {
     if (!currentUserEmail) {
@@ -165,22 +172,12 @@ const App: React.FC = () => {
         setIsAuthModalOpen(true);
         return false;
     }
-    const { subscriptionTier, trialStartedAt } = preferences;
     
-    if (trialStartedAt && !isTrialExpired()) return true;
-    
-    if (isTrialExpired() && subscriptionTier === 'none') {
-        if (location.pathname !== '/plans') {
-            navigate('/plans');
-        }
-        return false;
-    }
-
-    if (!subscriptionTier || subscriptionTier === 'none') {
-        alert("Subscription required for Studio features.");
+    if (isTrialExpired()) {
         navigate('/plans');
         return false;
     }
+    
     return true;
   };
 
@@ -192,8 +189,8 @@ const App: React.FC = () => {
       newPrefs.userName = name;
       newPrefs.email = normalizedEmail;
       if (activateTrial && !newPrefs.trialUsed) {
-          newPrefs.subscriptionTier = 'pro'; 
-          newPrefs.isProMember = true;
+          newPrefs.subscriptionTier = 'none'; 
+          newPrefs.isProMember = false;
           newPrefs.trialUsed = true;
           newPrefs.trialStartedAt = new Date().toISOString();
       }
@@ -209,12 +206,10 @@ const App: React.FC = () => {
   const handleSignOut = () => { localStorage.removeItem('ks_session_email'); setCurrentUserEmail(null); setShowLanding(true); setIsInitialized(false); navigate('/'); };
   
   const setActivePantryItems: React.Dispatch<React.SetStateAction<Ingredient[]>> = (value) => { 
-    if (isTrialExpired() && preferences.subscriptionTier === 'none' && activePantry.items.length >= 10) {
-        alert("Freemium Studio Full. Upgrade to Pro to add more than 10 items.");
+    if (isTrialExpired()) {
         navigate('/plans');
         return;
     }
-
     setPantries(prev => prev.map(p => { 
         if (p.id === activePantryId) return { ...p, items: typeof value === 'function' ? (value as any)(p.items) : value }; 
         return p; 
@@ -273,9 +268,6 @@ const App: React.FC = () => {
     });
   };
 
-  const daysRemaining = getDaysRemaining();
-  const isTrialActive = preferences.trialStartedAt && !isTrialExpired();
-
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans transition-colors duration-500 flex flex-col">
       {showLanding && location.pathname !== '/about' ? (
@@ -286,87 +278,48 @@ const App: React.FC = () => {
               <div onClick={() => {setShowLanding(true); navigate('/');}} className="flex items-center gap-2.5 cursor-pointer group">
                 <div className="p-1.5 bg-primary-400 rounded-xl text-white group-hover:scale-110 transition-transform shadow-lg"><Logo className="w-7 h-7" /></div>
                 <div className="flex flex-col">
-                  <span className="font-serif font-black text-xl text-slate-900 dark:text-white tracking-tighter leading-none">GatherHome</span>
+                  <span className="font-serif font-black text-xl text-slate-900 dark:text-white tracking-tighter leading-none">Prepzu</span>
                   {isTrialActive && (
                     <div className="flex items-center gap-1 mt-0.5">
                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
                        <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest bg-amber-500/10 px-2 py-0.5 rounded-md">{daysRemaining.toFixed(1)} Days Left</span>
                     </div>
                   )}
+                  {isTrialFinished && (
+                    <div className="flex items-center gap-1 mt-0.5">
+                       <span className="text-[10px] font-black text-rose-500 uppercase tracking-widest bg-rose-500/10 px-2 py-0.5 rounded-md flex items-center gap-1 border border-rose-500/20">
+                         <AlertOctagon size={10} /> Trial Expired
+                       </span>
+                    </div>
+                  )}
                 </div>
               </div>
               <nav className="flex items-center gap-1 md:gap-2">
-                  <NavLink to="/pantry" className={({isActive}) => `p-2.5 md:px-4 lg:px-5 md:py-2 rounded-xl text-sm font-bold transition-all ${isActive ? 'text-primary-600 bg-slate-100 dark:bg-slate-900/40' : 'text-slate-400 hover:text-slate-900'}`}><HomeIcon size={20} className="md:hidden" /><span className="hidden md:inline">Inventory</span></NavLink>
-                  <NavLink to="/studio" className={({isActive}) => `p-2.5 md:px-4 lg:px-5 md:py-2 rounded-xl text-sm font-bold transition-all ${isActive ? 'text-primary-600 bg-slate-100 dark:bg-slate-900/40' : 'text-slate-400 hover:text-slate-900'}`}><Sparkles size={20} className="md:hidden" /><span className="hidden md:inline">Studio</span></NavLink>
-                  <NavLink to="/calendar" className={({isActive}) => `p-2.5 md:px-4 lg:px-5 md:py-2 rounded-xl text-sm font-bold transition-all ${isActive ? 'text-primary-600 bg-slate-100 dark:bg-slate-900/40' : 'text-slate-400 hover:text-slate-900'}`}><CalendarIcon size={20} className="md:hidden" /><span className="hidden md:inline">Planner</span></NavLink>
-                  <NavLink to="/shopping" className={({isActive}) => `p-2.5 md:px-4 lg:px-5 md:py-2 rounded-xl text-sm font-bold transition-all ${isActive ? 'text-primary-600 bg-slate-100 dark:bg-slate-900/40' : 'text-slate-400 hover:text-slate-900'}`}><ShoppingBag size={20} className="md:hidden" /><span className="hidden md:inline">Cart</span></NavLink>
-                  <NavLink to="/plans" className={({isActive}) => `p-2.5 md:px-4 lg:px-5 md:py-2 rounded-xl text-sm font-bold transition-all ${isActive ? 'text-primary-600 bg-slate-100 dark:bg-slate-900/40' : 'text-slate-400 hover:text-slate-900'}`}><CreditCard size={20} className="md:hidden" /><span className="hidden md:inline">Plans</span></NavLink>
+                  <NavLink to="/pantry" className={({isActive}) => `p-2.5 md:px-4 lg:px-5 md:py-2 rounded-xl text-sm font-bold transition-all ${isActive ? 'text-primary-600 bg-slate-100 dark:bg-slate-900/40 shadow-sm' : 'text-slate-400 hover:text-slate-900'}`}><HomeIcon size={20} className="md:hidden" /><span className="hidden md:inline">Inventory</span></NavLink>
+                  <NavLink to="/studio" className={({isActive}) => `p-2.5 md:px-4 lg:px-5 md:py-2 rounded-xl text-sm font-bold transition-all ${isActive ? 'text-primary-600 bg-slate-100 dark:bg-slate-900/40 shadow-sm' : 'text-slate-400 hover:text-slate-900'}`}><Sparkles size={20} className="md:hidden" /><span className="hidden md:inline">Studio</span></NavLink>
+                  <NavLink to="/calendar" className={({isActive}) => `p-2.5 md:px-4 lg:px-5 md:py-2 rounded-xl text-sm font-bold transition-all ${isActive ? 'text-primary-600 bg-slate-100 dark:bg-slate-900/40 shadow-sm' : 'text-slate-400 hover:text-slate-900'}`}><CalendarIcon size={20} className="md:hidden" /><span className="hidden md:inline">Planner</span></NavLink>
+                  <NavLink to="/shopping" className={({isActive}) => `p-2.5 md:px-4 lg:px-5 md:py-2 rounded-xl text-sm font-bold transition-all ${isActive ? 'text-primary-600 bg-slate-100 dark:bg-slate-900/40 shadow-sm' : 'text-slate-400 hover:text-slate-900'}`}><ShoppingBag size={20} className="md:hidden" /><span className="hidden md:inline">Cart</span></NavLink>
               </nav>
               <div className="flex items-center gap-1 md:gap-3">
-                  {!currentUserEmail && (
-                      <button 
-                        onClick={() => {setAuthModalMode('signup'); setIsAuthModalOpen(true);}} 
-                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary-500 text-white font-black text-[10px] uppercase tracking-[0.2em] shadow-lg shadow-primary-500/20 hover:scale-105 active:scale-95 transition-all"
-                      >
-                        Start 3-Day Free Trial
-                      </button>
+                  {(showTrialButton || isTrialFinished) && (
+                    <button 
+                      onClick={() => {
+                        if (isTrialFinished) {
+                            navigate('/plans');
+                        } else {
+                            setAuthModalMode('signup');
+                            setIsAuthModalOpen(true);
+                        }
+                      }}
+                      className={`hidden sm:flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg hover:scale-105 transition-all ${isTrialFinished ? 'bg-rose-600 text-white animate-pulse' : 'bg-gradient-to-r from-primary-500 to-primary-600 text-white animate-pulse'}`}
+                    >
+                      <Gift size={14} /> {isTrialFinished ? 'Upgrade to Pro' : 'Start 3-Day Trial'}
+                    </button>
                   )}
                   <NavLink to="/settings" className={({isActive}) => `p-2.5 rounded-xl transition-all ${isActive ? 'text-primary-600 bg-slate-100 dark:bg-slate-900/40' : 'text-slate-400'}`}><Settings size={20} /></NavLink>
               </div>
           </header>
-          <main className="max-w-7xl mx-auto px-4 pb-4 md:px-6 md:pb-6 lg:px-12 lg:pb-12 pt-32 md:pt-36 flex-1 w-full flex flex-col">
-            {isTrialActive && (
-                <div className="mb-6 mx-4 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-2xl flex items-center justify-between shadow-sm">
-                    <div className="flex items-center gap-3">
-                        <Timer className="text-amber-600" size={20} />
-                        <span className="text-sm font-bold text-amber-800 dark:text-amber-200">
-                            {daysRemaining.toFixed(1)} days remaining in trial. 
-                            {activePantry.items.length >= 8 && <span className="ml-2 opacity-80 text-xs">(Limit: {activePantry.items.length}/10 for Freemium)</span>}
-                        </span>
-                    </div>
-                    <button onClick={() => navigate('/plans')} className="px-4 py-2 bg-amber-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-amber-700 transition-all flex items-center gap-2">
-                      Upgrade Now <ArrowRight size={12}/>
-                    </button>
-                </div>
-            )}
-
-            {isTrialExpired() && preferences.subscriptionTier === 'none' && (
-                <div className="mb-6 mx-4 p-5 bg-rose-50 dark:bg-rose-900/20 border-2 border-rose-200 dark:border-rose-800 rounded-[2rem] flex flex-col md:flex-row items-center justify-between gap-6 animate-fade-in shadow-xl">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 bg-rose-500 text-white rounded-2xl shadow-lg">
-                          <AlertCircle size={28} />
-                        </div>
-                        <div>
-                            <h3 className="text-xl font-black font-serif text-rose-900 dark:text-white">Trial Ended</h3>
-                            <p className="text-sm font-bold text-rose-800/70 dark:text-rose-400">Your Studio is now in Freemium mode. Your first 10 items are safe.</p>
-                        </div>
-                    </div>
-                    <div className="flex gap-3 w-full md:w-auto">
-                        <button onClick={() => navigate('/plans')} className="flex-1 md:flex-none px-8 py-4 bg-rose-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-rose-700 transition-all shadow-xl shadow-rose-500/20">Restore Pro Access</button>
-                        <button onClick={() => setShowLanding(false)} className="flex-1 md:flex-none px-8 py-4 bg-white dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-slate-700 rounded-2xl font-black text-xs uppercase tracking-widest">Stay on Freemium</button>
-                    </div>
-                </div>
-            )}
-
-            {showPantryTip && (
-               <div className="mb-6 mx-4 p-5 bg-indigo-600 text-white rounded-[2.5rem] flex flex-col md:flex-row items-center justify-between gap-6 animate-slide-down shadow-2xl relative overflow-hidden group">
-                  <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-[60px] -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-1000"></div>
-                  <div className="flex items-center gap-4 relative z-10">
-                    <div className="p-4 bg-white/20 rounded-2xl">
-                      <Lightbulb size={32} className="text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-black font-serif leading-tight">Studio Tip: Digitizing Staples</h3>
-                      <p className="text-indigo-100 text-sm font-medium mt-1">Categorizing items like "Spices" or "Rice" helps our AI curate better recipes. Try adding them now!</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4 relative z-10 w-full md:w-auto">
-                    <button onClick={() => {setShowPantryTip(false); navigate('/pantry');}} className="flex-1 md:flex-none px-10 py-4 bg-white text-indigo-600 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl">Try Now</button>
-                    <button onClick={() => setShowPantryTip(false)} className="p-2 text-white/50 hover:text-white"><X size={20}/></button>
-                  </div>
-               </div>
-            )}
-
+          <main className="max-w-7xl mx-auto px-4 pb-4 md:px-6 md:pb-6 lg:px-12 lg:pb-12 pt-32 md:pt-36 flex-1 w-full flex flex-col relative">
             <Suspense fallback={<PageLoader />}><Routes>
                 <Route path="/" element={<Navigate to="/pantry" replace />} />
                 <Route path="/pantry" element={<PantryView pantries={pantries} activePantryId={activePantryId} setActivePantryId={setActivePantryId} onAddPantry={handleAddPantry} items={activePantry.items} setItems={setActivePantryItems} onRequireAccess={(a) => checkAccess(a, 'basic')} />} />
@@ -380,6 +333,32 @@ const App: React.FC = () => {
             </Routes></Suspense>
           </main>
         </>
+      )}
+
+      {showTrialToast && (
+        <div className="fixed bottom-24 right-8 z-[200] max-w-sm animate-slide-up">
+           <div className="bg-white dark:bg-slate-900 border border-primary-500/30 rounded-2xl p-5 shadow-2xl flex items-start gap-4 backdrop-blur-md">
+              <div className="p-3 bg-amber-100 dark:bg-amber-900/30 text-amber-600 rounded-xl shrink-0">
+                <BellRing size={20} className="animate-bounce" />
+              </div>
+              <div className="flex-1">
+                <h4 className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-1">Trial Reminder</h4>
+                <p className="text-xs font-bold text-slate-800 dark:text-slate-100 leading-snug">
+                  Your free trial is ending soon. Upgrade now for permanent studio access!
+                </p>
+                <div className="mt-3 flex items-center gap-3">
+                   <button 
+                     onClick={() => { setShowTrialToast(false); navigate('/plans'); }}
+                     className="px-4 py-2 bg-primary-600 text-white rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-primary-500 transition-all shadow-lg shadow-primary-500/20"
+                   >
+                     Upgrade Now
+                   </button>
+                   <button onClick={() => setShowTrialToast(false)} className="text-[9px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600">Dismiss</button>
+                </div>
+              </div>
+              <button onClick={() => setShowTrialToast(false)} className="text-slate-300 hover:text-slate-500"><X size={14}/></button>
+           </div>
+        </div>
       )}
 
       {isAuthModalOpen && (

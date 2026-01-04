@@ -1,18 +1,9 @@
 
-import React, { useState, useRef, useMemo } from 'react';
+// Add React and hooks imports
+import React, { useState, useRef } from 'react';
 import { Plus, Trash2, Loader2, Package, ScanLine, Calendar, X, Box, ListPlus, Type, Info, FolderPlus, Edit3, Save, Minus, Filter, Search, Grid, List, Sparkles } from 'lucide-react';
 import { Ingredient, Category, Pantry, UserPreferences } from '../types';
 import { parseReceiptOrImage, organizePastedText } from '../services/geminiService';
-
-interface PantryViewProps {
-  pantries: Pantry[];
-  activePantryId: string;
-  setActivePantryId: (id: string) => void;
-  onAddPantry: (name: string) => void;
-  items: Ingredient[];
-  setItems: React.Dispatch<React.SetStateAction<Ingredient[]>>;
-  onRequireAccess: (action: string) => boolean;
-}
 
 const getCategoryColor = (category: string) => {
     switch (category) {
@@ -20,7 +11,7 @@ const getCategoryColor = (category: string) => {
         case Category.MEAT: return 'bg-rose-500';
         case Category.DAIRY: return 'bg-sky-500';
         case Category.BAKERY: return 'bg-amber-700';
-        case Category.PANTRY: return 'bg-amber-50';
+        case Category.PANTRY: return 'bg-amber-600';
         case Category.FROZEN: return 'bg-indigo-500';
         case Category.BEVERAGE: return 'bg-violet-500';
         default: return 'bg-slate-400';
@@ -30,20 +21,27 @@ const getCategoryColor = (category: string) => {
 const autoCategorize = (name: string): Category => {
     const lower = name.toLowerCase();
     
-    // Dairy & Eggs Priority
-    if (lower.match(/milk|cheese|egg|yogurt|butter|cream|dairy|curd|sour cream|parmesan|mozzarella|cheddar|brie|feta|goat|ricotta|heavy cream|half and half/)) return Category.DAIRY;
+    // Meat/Protein (Priority check to avoid "steak" falling into drinks)
+    if (lower.match(/steak|beef|chicken|pork|meat|fish|salmon|tuna|lamb|turkey|shrimp|bacon|sausage|ham|prawn|tilapia|ribs|fillet|loin/)) return Category.MEAT;
+
+    // Dairy & Eggs
+    if (lower.match(/milk|cheese|egg|yogurt|butter|cream|dairy|curd|sour cream|parmesan|mozzarella|cheddar|brie|feta|goat|ricotta|heavy cream|half and half/)) {
+        // Exception for nut butters
+        if (lower.match(/peanut butter|almond butter|nut butter/)) return Category.PANTRY;
+        return Category.DAIRY;
+    }
     
+    // Pantry Staples (Including Nut Butters)
+    if (lower.match(/peanut butter|almond butter|oil|flour|sugar|salt|spice|pasta|rice|bean|lentil|sauce|vinegar|honey|syrup|ketchup|mustard|mayo|canned|soup|cereal|oats|nut/)) return Category.PANTRY;
+
     // Beverages
-    if (lower.match(/water|soda|juice|beer|wine|coffee|tea|drink|sparkling|kombucha|s.pellegrino|san pellegrino|peligrino|cola|pepsi|coke/)) return Category.BEVERAGE;
+    if (lower.match(/water|soda|juice|beer|wine|coffee|tea|drink|sparkling|cola|pepsi|coke|whiskey|vodka|spirit|gin/)) return Category.BEVERAGE;
 
     // Bakery
-    if (lower.match(/bagel|bread|toast|sourdough|tortilla|wrap|roll|bun|muffin|pita|naan|baguette|ciabatta|croissant|focaccia|chips|potato chips|snack/)) return Category.BAKERY;
+    if (lower.match(/bagel|bread|toast|sourdough|tortilla|wrap|roll|bun|muffin|pita|naan|baguette|ciabatta|croissant|focaccia|chips|snack/)) return Category.BAKERY;
     
     // Produce
     if (lower.match(/apple|banana|fruit|veg|spinach|lettuce|tomato|onion|garlic|potato|carrot|pepper|salad|berry|lemon|lime|broccoli|cabbage|cucumber|mushroom|kale|zucchini|asparagus|cilantro|parsley/)) return Category.PRODUCE;
-    
-    // Meat
-    if (lower.match(/chicken|beef|pork|meat|fish|salmon|tuna|steak|sausage|bacon|turkey|shrimp|lamb|prawn|tilapia|ham/)) return Category.MEAT;
     
     // Frozen
     if (lower.match(/frozen|ice|pizza|nugget|peas|sortet|gelato|waffle/)) return Category.FROZEN;
@@ -58,6 +56,17 @@ const parseQuantity = (q: string): { num: number; suffix: string } => {
     }
     return { num: 1, suffix: q };
 };
+
+// Define the missing PantryViewProps interface
+interface PantryViewProps {
+  pantries: Pantry[];
+  activePantryId: string;
+  setActivePantryId: (id: string) => void;
+  onAddPantry: (name: string) => void;
+  items: Ingredient[];
+  setItems: React.Dispatch<React.SetStateAction<Ingredient[]>>;
+  onRequireAccess: (action: string) => boolean;
+}
 
 const PantryView: React.FC<PantryViewProps> = ({ 
   pantries, 
@@ -87,7 +96,6 @@ const PantryView: React.FC<PantryViewProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const mergeItems = (existing: Ingredient[], incoming: Ingredient[]): Ingredient[] => {
-    // RUTHLESS FILTER: Filter out cabinets, bins, organizers, etc.
     const foodOnly = incoming.filter(i => {
         const n = i.name.toLowerCase();
         const forbidden = ['shelf', 'cabinet', 'bin', 'storage', 'organizer', 'drawer', 'furniture', 'hardware', 'plastic box', 'clear box'];
@@ -157,16 +165,6 @@ const PantryView: React.FC<PantryViewProps> = ({
   };
 
   const normalizeCategory = (inputCat: string, nameHint: string): Category => {
-      const lowerHint = nameHint.toLowerCase();
-      if (lowerHint.match(/milk|cheese|egg|yogurt|butter|cream|dairy/)) return Category.DAIRY;
-      if (lowerHint.match(/water|soda|juice|beer|wine|coffee|tea|drink|sparkling/)) return Category.BEVERAGE;
-      if (lowerHint.match(/bread|bagel|toast|sourdough|chips/)) return Category.BAKERY;
-      
-      const lowerCat = inputCat.toLowerCase();
-      if (lowerCat.match(/dairy|egg/)) return Category.DAIRY;
-      if (lowerCat.match(/bev|drink|liquid/)) return Category.BEVERAGE;
-      if (lowerCat.includes('produce') || lowerCat.includes('fruit') || lowerCat.includes('veg')) return Category.PRODUCE;
-      if (lowerCat.includes('meat') || lowerCat.includes('chicken') || lowerCat.includes('beef')) return Category.MEAT;
       return autoCategorize(nameHint);
   };
 
@@ -302,6 +300,7 @@ const PantryView: React.FC<PantryViewProps> = ({
                                   <span className="text-xs font-bold w-12 text-center">{item.quantity}</span>
                                   <button onClick={() => adjustQuantity(item.id, 1)} className="p-1 text-slate-400 hover:text-slate-900 dark:hover:text-white"><Plus size={12}/></button>
                               </div>
+                              {/* Fixed: Use item.id instead of non-existent id */}
                               <button onClick={() => handleDelete(item.id)} className="text-slate-300 hover:text-rose-500 transition-colors"><Trash2 size={16}/></button>
                           </div>
                       </div>

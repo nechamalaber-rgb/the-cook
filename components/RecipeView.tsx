@@ -1,18 +1,21 @@
 
 import React, { useState, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChefHat, Clock, Flame, ChevronRight, ArrowLeft, ArrowRight, Play, CheckCircle, Heart, Loader2, Utensils, History, Activity, X, Eye, Scan, Sparkles, ChefHat as ChefIcon, AlertTriangle, Plus } from 'lucide-react';
+import { ChefHat, Clock, Flame, ChevronRight, ArrowLeft, ArrowRight, Play, CheckCircle, Heart, Loader2, Utensils, History, Activity, X, Eye, Scan, Sparkles, ChefHat as ChefIcon, AlertTriangle, Plus, Beef } from 'lucide-react';
 import { Ingredient, Recipe, UserPreferences, MealLog, Category } from '../types';
-import { parseRecipeFromImage } from '../services/geminiService';
 
 const categorizeIngredient = (name: string): Category => {
     const lower = name.toLowerCase();
-    if (lower.match(/apple|banana|fruit|veg|spinach|lettuce|tomato|onion|garlic|potato|carrot|pepper|salad|berry|lemon|lime|herb|cilantro|parsley|kale|broccoli|cabbage|cucumber|mushroom/)) return Category.PRODUCE;
-    if (lower.match(/milk|cheese|egg|yogurt|butter|cream|dairy|curd|sour cream|parmesan|mozzarella|cheddar|brie/)) return Category.DAIRY;
-    if (lower.match(/chicken|beef|pork|meat|fish|salmon|tuna|steak|sausage|bacon|turkey|shrimp|lamb|prawn|tilapia/)) return Category.MEAT;
-    if (lower.match(/frozen|ice|pizza|nugget|peas|sorbet|gelato/)) return Category.FROZEN;
+    if (lower.match(/steak|beef|chicken|pork|meat|fish|salmon|tuna|lamb|turkey|shrimp|bacon|sausage|ham|prawn|tilapia|ribs|fillet|loin/)) return Category.MEAT;
+    if (lower.match(/milk|cheese|egg|yogurt|butter|cream|dairy|curd|sour cream|parmesan|mozzarella|cheddar|brie|feta|goat|ricotta|heavy cream|half and half/)) {
+        if (lower.match(/peanut butter|almond butter|nut butter/)) return Category.PANTRY;
+        return Category.DAIRY;
+    }
+    if (lower.match(/apple|banana|fruit|veg|spinach|lettuce|tomato|onion|garlic|potato|carrot|pepper|salad|berry|lemon|lime|herb|cilantro|parsley|kale|broccoli|cabbage|cucumber|mushroom|zucchini|asparagus/)) return Category.PRODUCE;
+    if (lower.match(/bagel|bread|toast|sourdough|tortilla|wrap|roll|bun|muffin|pita|naan|baguette/)) return Category.BAKERY;
     if (lower.match(/water|soda|juice|beer|wine|coffee|tea|drink|sparkling/)) return Category.BEVERAGE;
-    return Category.PANTRY; // Default to pantry for staples like oil, flour, spices, etc.
+    if (lower.match(/frozen|ice|pizza|nugget|peas|sorbet|gelato/)) return Category.FROZEN;
+    return Category.PANTRY; 
 };
 
 const formatFractions = (text: string) => {
@@ -71,23 +74,15 @@ const RecipeView: React.FC<RecipeViewProps> = ({
   savedRecipes,
   onToggleSave,
   onLogMeal,
-  /* Destructured missing props from interface to avoid TS warnings */
-  onScheduleMeal,
-  generatedRecipes,
-  setGeneratedRecipes,
   selectedRecipe,
   setSelectedRecipe,
   cookingMode,
   setCookingMode,
   currentStep,
   setCurrentStep,
-  activeTab,
-  setActiveTab
 }) => {
   const navigate = useNavigate();
   const [updatingInventory, setUpdatingInventory] = useState(false);
-  const [isScanningRecipe, setIsScanningRecipe] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const startCooking = () => {
     setCookingMode(true);
@@ -137,7 +132,7 @@ const RecipeView: React.FC<RecipeViewProps> = ({
               <div className="w-24 h-24 bg-slate-100 dark:bg-slate-900 rounded-[3rem] flex items-center justify-center text-slate-300 dark:text-slate-700 mb-8 border border-slate-200 dark:border-slate-800 shadow-inner"><ChefIcon size={48} /></div>
               <h2 className="text-2xl font-black text-slate-900 dark:text-white font-serif mb-4">No Recipe Selected</h2>
               <p className="text-slate-500 dark:text-slate-400 max-w-sm font-bold uppercase text-xs tracking-widest leading-relaxed mb-10">Select a meal from your Kitchen Studio to begin.</p>
-              <div className="flex flex-col sm:flex-row gap-4"><button onClick={() => navigate('/studio')} className="flex items-center gap-2 px-8 py-4 bg-primary-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary-500/20 hover:scale-105 active:scale-95 transition-all"><Sparkles size={18} /> New Menu</button><button onClick={() => navigate('/studio')} className="flex items-center gap-2 px-8 py-4 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg border border-slate-200 dark:border-slate-800 hover:scale-105 active:scale-95 transition-all"><Heart size={18} /> My Saved</button></div>
+              <div className="flex flex-col sm:flex-row gap-4"><button onClick={() => navigate('/studio')} className="flex items-center gap-2 px-8 py-4 bg-primary-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-primary-500/20 hover:scale-105 active:scale-95 transition-all"><Sparkles size={18} /> New Menu</button></div>
           </div>
       ) : cookingMode ? (
         <div className="fixed inset-0 z-[100] bg-slate-950 flex flex-col animate-fade-in text-white">
@@ -160,7 +155,9 @@ const RecipeView: React.FC<RecipeViewProps> = ({
                         <div className="flex items-center gap-2.5 bg-white/10 border border-white/10 px-5 py-3 rounded-2xl backdrop-blur-md"><Clock size={18} className="text-primary-400" /><span className="text-xs font-black uppercase tracking-widest">{selectedRecipe.timeMinutes} MINS</span></div>
                         <div className="flex items-center gap-2.5 bg-white/10 border border-white/10 px-5 py-3 rounded-2xl backdrop-blur-md"><Activity size={18} className="text-emerald-400" /><span className="text-xs font-black uppercase tracking-widest">{selectedRecipe.difficulty} LEVEL</span></div>
                         <div className="flex items-center gap-2.5 bg-white/10 border border-white/10 px-5 py-3 rounded-2xl backdrop-blur-md"><Flame size={18} className="text-rose-400" /><span className="text-xs font-black uppercase tracking-widest">{selectedRecipe.calories || '450'} KCAL</span></div>
+                        <div className="flex items-center gap-2.5 bg-white/10 border border-white/10 px-5 py-3 rounded-2xl backdrop-blur-md"><Beef size={18} className="text-amber-400" /><span className="text-xs font-black uppercase tracking-widest">{selectedRecipe.protein || '0g'} PROTEIN</span></div>
                     </div>
+                    <p className="text-[10px] font-bold text-white/50 uppercase tracking-[0.3em] mt-8 italic">Note: Images are AI-generated visualizations. Plating and appearance may vary from the actual recipe.</p>
                 </div>
             </div>
             
@@ -216,22 +213,6 @@ const RecipeView: React.FC<RecipeViewProps> = ({
                                 </ul>
                             )}
                         </div>
-
-                        {selectedRecipe.tips && selectedRecipe.tips.length > 0 && (
-                            <div className="mt-8 p-6 bg-indigo-50 dark:bg-indigo-900/20 rounded-2xl border border-indigo-100 dark:border-indigo-800">
-                                <h4 className="text-xs font-black uppercase tracking-widest text-indigo-500 mb-4 flex items-center gap-2">
-                                    <Sparkles size={14} /> Optional Upgrades (Still Easy)
-                                </h4>
-                                <ul className="space-y-3">
-                                    {selectedRecipe.tips.map((tip, i) => (
-                                        <li key={i} className="flex items-start gap-3 text-sm font-bold text-slate-700 dark:text-slate-300">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-1.5 shrink-0" />
-                                            {tip}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        )}
                     </div>
                     <div>
                         <h3 className="text-2xl font-black mb-10 flex items-center gap-4 text-slate-900 dark:text-white font-serif uppercase tracking-tight"><History className="text-primary-600" size={28}/> Studio Logic</h3>

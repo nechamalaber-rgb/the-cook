@@ -1,22 +1,9 @@
-
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  ScanLine, 
-  Sparkles, 
-  ShoppingCart, 
-  ChefHat, 
-  ArrowRight, 
-  Zap, 
-  Package, 
-  Calendar,
-  Utensils,
-  History,
-  CheckCircle2,
-  Cpu,
-  Eye,
-  Mic,
-  Home
+  ScanLine, Sparkles, ArrowRight, ShieldCheck, Cpu, Eye, 
+  Info, AlertTriangle, BookOpen, Flame, Clock, Microscope, 
+  Settings, ChefHat, Database, Zap
 } from 'lucide-react';
 import { Logo } from './Logo';
 
@@ -24,135 +11,111 @@ const AboutView: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="animate-fade-in pb-24 max-w-6xl mx-auto px-4">
+    <div className="animate-fade-in pb-24 max-w-5xl mx-auto px-4">
       
       {/* HEADER SECTION */}
-      <section className="text-center py-20 relative">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-primary-100 dark:bg-primary-900/10 rounded-[100%] blur-[120px] opacity-60 pointer-events-none"></div>
+      <section className="text-center py-20 relative border-b border-slate-200 dark:border-slate-800 mb-16">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-primary-500/10 rounded-full blur-[100px] opacity-60 pointer-events-none"></div>
         <div className="relative z-10">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 rounded-full text-[10px] font-black uppercase tracking-widest text-slate-500 mb-8 border border-slate-200 dark:border-slate-800 shadow-sm">
-                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                GatherHome OS 1.0
-            </div>
-            <h1 className="text-6xl md:text-8xl font-black text-slate-900 dark:text-white mb-6 font-serif tracking-tighter leading-[0.9]">
-              The Operating System <br/> <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-accent-500">for Your Kitchen.</span>
+            <h1 className="text-5xl md:text-7xl font-black text-slate-900 dark:text-white mb-6 font-serif tracking-tighter leading-none">
+              Studio <span className="text-primary-500">Logic.</span>
             </h1>
-            <p className="text-xl md:text-2xl text-slate-500 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed mb-12 font-medium">
-              A unified intelligence that manages inventory, curates menus, and orchestrates your culinary life.
+            <p className="text-lg md:text-xl text-slate-500 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed font-medium">
+              Understanding the Studio Engine: How we orchestrate your culinary data and where our intelligence meets reality.
             </p>
-            <div className="flex justify-center gap-4">
-                <button 
-                onClick={() => navigate('/')}
-                className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-10 py-5 rounded-[2rem] font-black text-lg shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center gap-3"
-                >
-                Launch Studio <ArrowRight size={20} />
-                </button>
-            </div>
         </div>
       </section>
 
-      {/* BENTO GRID SHOWCASE */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-24">
-          
-          {/* VISION CARD */}
-          <div className="md:col-span-2 bg-slate-900 text-white rounded-[3rem] p-10 md:p-14 relative overflow-hidden group">
-               <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/20 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2"></div>
-               <div className="relative z-10 flex flex-col h-full justify-between">
-                   <div className="mb-12">
-                       <div className="w-16 h-16 bg-white/10 rounded-3xl flex items-center justify-center text-indigo-400 mb-6 backdrop-blur-md border border-white/10">
-                           <ScanLine size={32} />
+      {/* CRITICAL ACCURACY DISCLAIMER */}
+      <section className="mb-20">
+          <div className="bg-rose-50 dark:bg-rose-950/20 border-2 border-rose-500/30 rounded-[3rem] p-10 md:p-14 relative overflow-hidden group">
+               <div className="flex flex-col md:flex-row gap-10 items-start">
+                   <div className="w-16 h-16 bg-rose-500 text-white rounded-2xl flex items-center justify-center shrink-0 shadow-lg shadow-rose-500/20">
+                       <AlertTriangle size={32} />
+                   </div>
+                   <div className="space-y-6">
+                       <h2 className="text-3xl font-black font-serif text-slate-900 dark:text-white uppercase tracking-tight">Technical Accuracy Notice</h2>
+                       <div className="space-y-4 text-slate-600 dark:text-slate-300 font-medium leading-relaxed">
+                           <p>
+                             Prepzu is an AI-powered orchestration engine. While we utilize state-of-the-art Large Language Models (Gemini 3 series), **our outputs are estimations and NOT 100% accurate.**
+                           </p>
+                           <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                               <li className="flex items-start gap-3 bg-white dark:bg-slate-900/50 p-4 rounded-2xl border border-rose-100 dark:border-rose-900/30">
+                                   <div className="w-1.5 h-1.5 rounded-full bg-rose-500 mt-2 shrink-0"></div>
+                                   <span className="text-xs font-bold">Nutritional data (calories, macros) are calculated based on general averages, not specific brand lab tests.</span>
+                               </li>
+                               <li className="flex items-start gap-3 bg-white dark:bg-slate-900/50 p-4 rounded-2xl border border-rose-100 dark:border-rose-900/30">
+                                   <div className="w-1.5 h-1.5 rounded-full bg-rose-500 mt-2 shrink-0"></div>
+                                   <span className="text-xs font-bold">Recipe times and temperatures are suggested based on standard logic; actual hardware performance varies.</span>
+                               </li>
+                               <li className="flex items-start gap-3 bg-white dark:bg-slate-900/50 p-4 rounded-2xl border border-rose-100 dark:border-rose-900/30">
+                                   <div className="w-1.5 h-1.5 rounded-full bg-rose-500 mt-2 shrink-0"></div>
+                                   <span className="text-xs font-bold">Ingredient substitutions may not always account for complex chemical reactions in baking or advanced techniques.</span>
+                               </li>
+                               <li className="flex items-start gap-3 bg-white dark:bg-slate-900/50 p-4 rounded-2xl border border-rose-100 dark:border-rose-900/30">
+                                   <div className="w-1.5 h-1.5 rounded-full bg-rose-500 mt-2 shrink-0"></div>
+                                   <span className="text-xs font-bold">Image visualizations are AI-generated and may not perfectly represent the final plated dish.</span>
+                               </li>
+                           </ul>
+                           <p className="text-xs font-black uppercase tracking-widest text-slate-400 mt-6 bg-slate-100 dark:bg-slate-800/50 p-4 rounded-xl text-center border border-slate-200 dark:border-slate-800">
+                             Always verify food safety, internal temperatures, and allergen data manually.
+                           </p>
                        </div>
-                       <h2 className="text-4xl font-black font-serif mb-4">Vision Intelligence</h2>
-                       <p className="text-slate-400 text-lg max-w-md leading-relaxed">
-                           Don't type. Just snap. Our multimodal intelligence analyzes receipts and pantry shelves to instantly digitize your inventory with 99% accuracy.
-                       </p>
                    </div>
-                   <div className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-sm max-w-sm ml-auto transform group-hover:-translate-y-2 transition-transform duration-500">
-                       <div className="flex items-center gap-4 mb-4 border-b border-white/10 pb-4">
-                           <div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center"><Eye size={18} className="text-indigo-400"/></div>
-                           <div>
-                               <div className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Scanning</div>
-                               <div className="font-bold">Whole Foods Receipt</div>
-                           </div>
-                       </div>
-                       <div className="space-y-2">
-                           <div className="flex justify-between text-sm font-medium text-slate-300"><span>Org. Avocados</span><span>x4</span></div>
-                           <div className="flex justify-between text-sm font-medium text-slate-300"><span>Almond Milk</span><span>x1</span></div>
-                           <div className="flex justify-between text-sm font-medium text-slate-300"><span>Sourdough</span><span>x1</span></div>
-                       </div>
-                   </div>
-               </div>
-          </div>
-
-          {/* GENERATION CARD */}
-          <div className="bg-white dark:bg-slate-900 rounded-[3rem] p-10 relative overflow-hidden border border-slate-200 dark:border-slate-800 shadow-sm group">
-               <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-primary-50 dark:from-primary-900/20 to-transparent"></div>
-               <div className="relative z-10">
-                   <div className="w-14 h-14 bg-primary-100 dark:bg-primary-900/30 rounded-2xl flex items-center justify-center text-primary-600 mb-6">
-                       <Sparkles size={28} />
-                   </div>
-                   <h2 className="text-3xl font-black font-serif mb-4 text-slate-900 dark:text-white">Studio Chef</h2>
-                   <p className="text-slate-500 dark:text-slate-400 leading-relaxed mb-8">
-                       Context-aware recipe generation that respects your allergies, appliances, and goals.
-                   </p>
-                   <div className="space-y-3">
-                       {['Zero Waste', 'Macro-Balanced', 'Cuisine Specific'].map((tag, i) => (
-                           <div key={i} className="flex items-center gap-3 text-sm font-bold text-slate-700 dark:text-slate-300">
-                               <CheckCircle2 size={16} className="text-primary-500" /> {tag}
-                           </div>
-                       ))}
-                   </div>
-               </div>
-          </div>
-
-          {/* LOGISTICS CARD */}
-          <div className="bg-white dark:bg-slate-900 rounded-[3rem] p-10 relative overflow-hidden border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between">
-               <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-[60px] -translate-y-1/2 translate-x-1/2"></div>
-               <div>
-                    <div className="w-14 h-14 bg-emerald-100 dark:bg-emerald-900/30 rounded-2xl flex items-center justify-center text-emerald-600 mb-6">
-                        <ShoppingCart size={28} />
-                    </div>
-                    <h2 className="text-3xl font-black font-serif mb-4 text-slate-900 dark:text-white">Auto Logistics</h2>
-                    <p className="text-slate-500 dark:text-slate-400 leading-relaxed">
-                        Export your grocery needs to Instacart or Walmart.
-                    </p>
-               </div>
-               <div className="mt-8 pt-8 border-t border-slate-100 dark:border-slate-800 flex gap-4 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
-                    <div className="h-8 w-20 bg-slate-200 dark:bg-slate-800 rounded-lg"></div>
-                    <div className="h-8 w-20 bg-slate-200 dark:bg-slate-800 rounded-lg"></div>
-               </div>
-          </div>
-
-          {/* VOICE CARD */}
-          <div className="md:col-span-2 bg-slate-100 dark:bg-slate-800 rounded-[3rem] p-10 md:p-14 relative overflow-hidden flex flex-col md:flex-row items-center gap-10">
-               <div className="flex-1">
-                   <div className="w-16 h-16 bg-rose-500 text-white rounded-3xl flex items-center justify-center mb-6 shadow-xl shadow-rose-500/20">
-                       <Mic size={32} />
-                   </div>
-                   <h2 className="text-4xl font-black font-serif mb-4 text-slate-900 dark:text-white">Hands-Free Studio</h2>
-                   <p className="text-slate-500 dark:text-slate-400 text-lg leading-relaxed mb-8">
-                       Cooking is messy. Use our voice-guided mode to step through recipes without touching your screen.
-                   </p>
-                   <button onClick={() => navigate('/')} className="px-6 py-3 bg-white dark:bg-slate-900 text-slate-900 dark:text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-sm hover:scale-105 transition-transform">Enter Cook Mode</button>
-               </div>
-               <div className="flex-1 flex justify-center">
-                    <div className="w-64 h-64 bg-white dark:bg-slate-900 rounded-full flex items-center justify-center relative">
-                        <div className="absolute inset-0 border-4 border-rose-500/20 rounded-full animate-ping" style={{animationDuration: '3s'}}></div>
-                        <div className="absolute inset-4 border-4 border-rose-500/40 rounded-full animate-ping" style={{animationDuration: '3s', animationDelay: '0.5s'}}></div>
-                        <ChefHat size={64} className="text-rose-500 relative z-10" />
-                    </div>
                </div>
           </div>
       </section>
 
-      {/* TECH STACK FOOTER */}
-      <section className="text-center pb-20">
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 mb-8">Powered By Next-Gen Infrastructure</p>
-          <div className="flex flex-wrap justify-center gap-4 md:gap-12 opacity-50">
-             <div className="flex items-center gap-2 font-bold text-slate-600 dark:text-slate-400"><Cpu size={16}/> Neural Engine 3.0</div>
-             <div className="flex items-center gap-2 font-bold text-slate-600 dark:text-slate-400"><Eye size={16}/> Vision 4.0</div>
-             <div className="flex items-center gap-2 font-bold text-slate-600 dark:text-slate-400"><Zap size={16}/> React 19</div>
+      {/* SYSTEM ARCHITECTURE */}
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-24">
+          
+          <div className="bg-white dark:bg-slate-900 rounded-[3rem] p-10 border border-slate-100 dark:border-slate-800 shadow-sm">
+               <div className="w-14 h-14 bg-primary-100 dark:bg-primary-900/30 rounded-2xl flex items-center justify-center text-primary-600 mb-8">
+                   <Microscope size={28} />
+               </div>
+               <h3 className="text-2xl font-black font-serif mb-4 text-slate-900 dark:text-white">Studio Curation Logic</h3>
+               <p className="text-slate-500 dark:text-slate-400 leading-relaxed font-medium mb-6">
+                 Our recipes aren't "searched"—they are synthesized. The Studio Engine analyzes your available inventory, household size, and time constraints to draft a technical instruction set unique to your session.
+               </p>
+               <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">
+                   <div className="flex items-center gap-2 mb-2">
+                       <Database size={14} className="text-primary-500" />
+                       <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Data Sources</span>
+                   </div>
+                   <p className="text-[10px] font-bold text-slate-600 dark:text-slate-300">OpenFoodRepo API + LLM Technical Knowledge Base + User Preferences Matrix</p>
+               </div>
           </div>
+
+          <div className="bg-white dark:bg-slate-900 rounded-[3rem] p-10 border border-slate-100 dark:border-slate-800 shadow-sm">
+               <div className="w-14 h-14 bg-indigo-100 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center text-indigo-600 mb-8">
+                   <Eye size={28} />
+               </div>
+               <h3 className="text-2xl font-black font-serif mb-4 text-slate-900 dark:text-white">Vision Recognition</h3>
+               <p className="text-slate-500 dark:text-slate-400 leading-relaxed font-medium mb-6">
+                 When you scan a receipt or a shelf, we use OCR and multimodal object detection. It identifies item names and maps them to common culinary categories automatically.
+               </p>
+               <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">
+                   <div className="flex items-center gap-2 mb-2">
+                       <Zap size={14} className="text-indigo-500" />
+                       <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Processing Time</span>
+                   </div>
+                   <p className="text-[10px] font-bold text-slate-600 dark:text-slate-300">Average 3.4 seconds per scan cycle. Accuracy depends on lighting and text clarity.</p>
+               </div>
+          </div>
+
+      </section>
+
+      {/* CALL TO ACTION */}
+      <section className="text-center">
+          <button 
+            onClick={() => navigate('/studio')}
+            className="inline-flex items-center gap-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-12 py-6 rounded-[2rem] font-black text-xs uppercase tracking-[0.3em] shadow-2xl hover:scale-105 active:scale-95 transition-all"
+          >
+            Return to Studio <ArrowRight size={20} />
+          </button>
+          <p className="mt-8 text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">
+            Prepzu Intelligence System • Version 1.2
+          </p>
       </section>
 
     </div>

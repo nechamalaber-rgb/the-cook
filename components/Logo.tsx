@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 interface LogoProps {
@@ -10,7 +11,7 @@ export const Logo: React.FC<LogoProps> = ({ className = "w-12 h-12" }) => (
     fill="none" 
     xmlns="http://www.w3.org/2000/svg" 
     className={className}
-    aria-label="GatherHome Logo"
+    aria-label="Prepzu Logo"
   >
     {/* Outer Harmony Circle */}
     <circle 

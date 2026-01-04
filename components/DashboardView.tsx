@@ -1,30 +1,13 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Sparkles, ChefHat, Clock, Flame, 
   Loader2, MessageSquarePlus, 
-  Dice5, Heart, Activity, Eye, ShieldCheck, Users, BookOpen, Calendar, Utensils, Timer, Plus, X, ListPlus, Save, Trash2, ArrowRight, PenLine, Ban, Package, ChevronRight, Check, Coffee, ScrollText, SlidersHorizontal, Settings
+  Dice5, Heart, Activity, Eye, ShieldCheck, Users, BookOpen, Calendar, Utensils, Timer, Plus, X, ListPlus, Save, Trash2, ArrowRight, PenLine, Ban, Package, ChevronRight, Check, Coffee, ScrollText, SlidersHorizontal, Settings, Beef, Lightbulb, HelpCircle
 } from 'lucide-react';
 import { Logo } from './Logo';
 import { Ingredient, Recipe, UserPreferences, MealLog, RecipeGenerationOptions, Category } from '../types';
 import { generateRecipeImage } from '../services/geminiService';
-
-const KITCHEN_FACTS = [
-  "Adding salt to water makes it boil at a higher temperature, but slightly faster.",
-  "Honey is the only food that never spoils—3,000-year-old honey is still edible!",
-  "Store tomatoes at room temperature; the fridge kills their flavor enzymes.",
-  "A sharp knife is safer than a dull one because it won't slip.",
-  "Mushrooms are 90% water. Sauté them without oil first for better texture.",
-  "A pinch of sugar in tomato sauce perfectly balances natural acidity.",
-  "Avocados ripen faster in a paper bag with a banana.",
-  "Your freezer is the best tool for reducing food waste.",
-  "Rinsing rice removes excess starch for fluffier grains.",
-  "Crying over onions? Chill them in the fridge first to slow the gas release.",
-  "The world's most expensive spice is saffron, derived from the crocus flower.",
-  "Strawberries are not actually berries, but bananas and watermelons are!",
-  "Chocolate was once used as currency by the Aztecs."
-];
 
 interface DashboardViewProps {
   pantryItems: Ingredient[];
@@ -60,7 +43,6 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   onRequireAccess
 }) => {
   const navigate = useNavigate();
-  const [factIndex, setFactIndex] = useState(0);
   const [activeTab, setActiveTab] = useState<'discover' | 'saved'>('discover');
   
   // Modal states
@@ -74,7 +56,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({
     timeMinutes: 30,
     difficulty: 'Medium',
     ingredients: [],
-    instructions: []
+    instructions: [],
+    protein: '0g'
   });
   const [tempIngredient, setTempIngredient] = useState('');
   const [tempInstruction, setTempInstruction] = useState('');
@@ -91,27 +74,14 @@ const DashboardView: React.FC<DashboardViewProps> = ({
     complexity: preferences.skillLevel === 'Advanced' ? 'Gourmet' : 'Simple'
   });
 
-  const [excludeInput, setExcludeInput] = useState('');
   const [temporaryExclusions, setTemporaryExclusions] = useState<string[]>([]);
-  
   const [imageGenerating, setImageGenerating] = useState<Record<string, boolean>>({});
-
-  useEffect(() => {
-    let interval: any;
-    if (isGenerating) {
-      interval = setInterval(() => {
-        setFactIndex(prev => (prev + 1) % KITCHEN_FACTS.length);
-      }, 3500);
-    }
-    return () => clearInterval(interval);
-  }, [isGenerating]);
 
   const triggerImageGeneration = useCallback(async (recipe: Recipe) => {
     if (recipe.imageUrl || imageGenerating[recipe.id]) return;
-    
     setImageGenerating(prev => ({ ...prev, [recipe.id]: true }));
     try {
-      const imgData = await generateRecipeImage(recipe, preferences.subscriptionTier);
+      const imgData = await generateRecipeImage(recipe);
       if (imgData) {
         const fullImg = `data:image/png;base64,${imgData}`;
         setGeneratedRecipes(prev => prev.map(r => r.id === recipe.id ? { ...r, imageUrl: fullImg } : r));
@@ -121,7 +91,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
     } finally {
       setImageGenerating(prev => ({ ...prev, [recipe.id]: false }));
     }
-  }, [imageGenerating, setGeneratedRecipes, preferences.subscriptionTier]);
+  }, [imageGenerating, setGeneratedRecipes]);
 
   useEffect(() => {
     if (generatedRecipes.length > 0 && !isGenerating) {
@@ -136,41 +106,28 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   const handleStartGeneration = async (isSurprise = false) => {
     if (!onRequireAccess("To curate menus")) return;
 
-    // Combine manual request with temporary exclusions
-    const combinedRequest = temporaryExclusions.length > 0 
-        ? `${genOptions.customRequest || ''} (Strictly exclude: ${temporaryExclusions.join(', ')})`.trim()
-        : genOptions.customRequest;
-
-    const options: RecipeGenerationOptions = isSurprise ? {
+    const finalOptions: RecipeGenerationOptions = isSurprise ? {
         servings: preferences.householdSize,
         mealType: 'Any',
         maxTime: 'Any',
-        customRequest: 'Surprise me with a unique dish from my available ingredients.',
+        customRequest: 'Surprise me with a unique, highly realistic home-cooked dish from my available ingredients.',
         recipeCount: 1,
         complexity: genOptions.complexity 
     } : {
         ...genOptions,
-        customRequest: combinedRequest,
         servings: preferences.householdSize,
-        recipeCount: preferences.generationsCount || 3
+        recipeCount: preferences.generationsCount || 3,
+        excludedIngredients: temporaryExclusions
     };
 
-    onGenerate(options);
-  };
-
-  const handleAddExclusion = (name: string) => {
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    if (!temporaryExclusions.includes(trimmed)) {
-        setTemporaryExclusions(prev => [...prev, trimmed]);
-    }
+    onGenerate(finalOptions);
   };
 
   const toggleExclusion = (name: string) => {
     if (temporaryExclusions.includes(name)) {
         setTemporaryExclusions(prev => prev.filter(item => item !== name));
     } else {
-        handleAddExclusion(name);
+        setTemporaryExclusions(prev => [...prev, name]);
     }
   };
 
@@ -188,12 +145,20 @@ const DashboardView: React.FC<DashboardViewProps> = ({
         id: `manual-${Date.now()}`,
         isUserCreated: true,
         matchScore: 100,
-        missingIngredients: []
+        missingIngredients: [],
+        protein: newRecipe.protein || '0g'
     };
     onToggleSave(finalRecipe);
     setIsCreatorOpen(false);
-    setNewRecipe({ title: '', description: '', timeMinutes: 30, difficulty: 'Medium', ingredients: [], instructions: [] });
+    setNewRecipe({ title: '', description: '', timeMinutes: 30, difficulty: 'Medium', ingredients: [], instructions: [], protein: '0g' });
     setActiveTab('saved');
+  };
+
+  const confirmPlan = () => {
+    if (!recipeToPlan) return;
+    onScheduleMeal(recipeToPlan, planDate, planMealType);
+    setPlanModalOpen(false);
+    setRecipeToPlan(null);
   };
 
   const addIngredient = () => {
@@ -219,23 +184,6 @@ const DashboardView: React.FC<DashboardViewProps> = ({
     navigate('/recipes');
   };
 
-  const initiatePlan = (recipe: Recipe, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!onRequireAccess("To plan meals")) return;
-    setRecipeToPlan(recipe);
-    setPlanModalOpen(true);
-  };
-
-  const confirmPlan = () => {
-    if (recipeToPlan) {
-        onScheduleMeal(recipeToPlan, planDate, planMealType);
-        setPlanModalOpen(false);
-        setRecipeToPlan(null);
-        alert(`Added ${recipeToPlan.title} to planner!`);
-    }
-  };
-
-  // Group pantry items by category for the picker
   const pantryByCategory = pantryItems.reduce((acc, item) => {
       if (!acc[item.category]) acc[item.category] = [];
       acc[item.category].push(item);
@@ -246,17 +194,15 @@ const DashboardView: React.FC<DashboardViewProps> = ({
     <div className="animate-fade-in w-full mx-auto pb-24">
       {/* Header & Tabs */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-6 px-1">
-        <div>
+        <div className="flex items-center gap-4">
           <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white font-serif">Kitchen Studio</h1>
-          <div className="flex items-center gap-3 mt-2">
-            <p className="text-primary-600 font-black text-xs tracking-[0.2em] uppercase">Curation Logic Active</p>
-            {preferences.isKosher && (
-                <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800">
-                    <ScrollText size={10} />
-                    <span className="text-[9px] font-black uppercase tracking-widest">Kosher Mode</span>
-                </div>
-            )}
-          </div>
+          <button 
+            onClick={() => navigate('/settings')}
+            className="p-3 bg-white dark:bg-slate-900 rounded-2xl text-slate-400 hover:text-primary-600 transition-all border border-slate-200 dark:border-slate-800 shadow-sm hover:scale-105 active:scale-95"
+            title="Studio Settings"
+          >
+            <Settings size={24} />
+          </button>
         </div>
         
         <div className="bg-white dark:bg-slate-900 p-1.5 rounded-2xl flex gap-1 shadow-sm border border-slate-200 dark:border-slate-800">
@@ -268,6 +214,11 @@ const DashboardView: React.FC<DashboardViewProps> = ({
       {activeTab === 'discover' ? (
         <>
           <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-6 md:p-10 shadow-sm border border-slate-200 dark:border-slate-800 mb-10 relative overflow-hidden group">
+              {isGenerating && (
+                <div className="absolute top-0 left-0 right-0 h-1.5 z-20">
+                  <div className="h-full bg-primary-500 animate-[loading_2s_ease-in-out_infinite] origin-left"></div>
+                </div>
+              )}
               <div className="absolute top-0 right-0 w-80 h-80 bg-primary-100/30 dark:bg-primary-900/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 opacity-60 pointer-events-none transition-transform duration-1000 group-hover:scale-110"></div>
               
               <div className="relative z-10">
@@ -278,11 +229,10 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                                Studio Parameters
                            </h2>
                            <button 
-                             onClick={() => navigate('/settings')}
-                             className="p-2 text-slate-400 hover:text-primary-500 transition-colors"
-                             title="Intelligence Settings"
+                             onClick={() => navigate('/about')}
+                             className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg text-[9px] font-black uppercase tracking-widest text-slate-500 hover:text-primary-600 transition-all border border-transparent hover:border-primary-500/20"
                            >
-                             <Settings size={18} />
+                             <HelpCircle size={14} /> How it works?
                            </button>
                        </div>
                        
@@ -311,7 +261,6 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                   </div>
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 mb-8">
-                      {/* Left Column: Logistics */}
                       <div className="space-y-6">
                            <div>
                                <label className="text-[10px] font-black uppercase tracking-widest mb-3 block text-slate-400">Meal Focus</label>
@@ -343,17 +292,6 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                                             placeholder="Flexible" 
                                             className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 text-xs rounded-xl px-4 py-3.5 outline-none font-bold"
                                         />
-                                        <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
-                                            {[15, 30, 45].map(t => (
-                                                <button 
-                                                    key={t}
-                                                    onClick={() => handleTimeChange(t.toString())}
-                                                    className="px-2 py-1 bg-white dark:bg-slate-700 rounded-lg text-[9px] font-black text-slate-500 hover:text-primary-500 border border-slate-100 dark:border-slate-600 shadow-sm transition-all"
-                                                >
-                                                    {t}m
-                                                </button>
-                                            ))}
-                                        </div>
                                     </div>
                                 </div>
 
@@ -371,7 +309,6 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                            </div>
                       </div>
 
-                      {/* Right Column: Context */}
                       <div className="space-y-6">
                           <div>
                               <label className="text-[10px] font-black uppercase tracking-widest block text-slate-400 mb-3">Vision / Specific Request</label>
@@ -389,34 +326,44 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                                         <Ban size={14} className="text-rose-500" /> 
                                         <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Session Exclusions</span>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        {temporaryExclusions.length > 0 && (
-                                            <span className="text-[10px] font-black bg-rose-100 dark:bg-rose-900/30 text-rose-600 px-2 py-0.5 rounded-md">
-                                                {temporaryExclusions.length} Active
-                                            </span>
-                                        )}
-                                        <button onClick={() => setIsExclusionPickerOpen(true)} className="text-[10px] font-black uppercase text-primary-600 hover:underline">
-                                            Modify
-                                        </button>
-                                    </div>
+                                    <button onClick={() => setIsExclusionPickerOpen(true)} className="text-[10px] font-black uppercase text-primary-600 hover:underline">
+                                        Modify ({temporaryExclusions.length})
+                                    </button>
                                 </div>
                            </div>
                       </div>
                   </div>
                   
                   <div className="flex flex-col md:flex-row items-center gap-4 border-t border-slate-100 dark:border-slate-800 pt-8">
-                      <button onClick={() => handleStartGeneration(true)} disabled={isGenerating} className="p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-all border border-indigo-200 dark:border-indigo-800 disabled:opacity-50" title="Surprise Me">
-                          <Dice5 size={24}/>
+                      <button 
+                        onClick={() => handleStartGeneration(true)} 
+                        disabled={isGenerating} 
+                        className="p-4 rounded-2xl bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-all border border-indigo-200 dark:border-indigo-800 disabled:opacity-50"
+                      >
+                          {isGenerating ? <Loader2 size={24} className="animate-spin" /> : <Dice5 size={24}/>}
                       </button>
-                      <button onClick={() => handleStartGeneration(false)} disabled={isGenerating} className="flex-1 w-full py-4 px-10 rounded-2xl font-black text-xs tracking-widest uppercase transition-all flex items-center justify-center gap-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-xl disabled:opacity-80 active:scale-95 hover:bg-slate-800 dark:hover:bg-slate-200">
+                      <button 
+                        onClick={() => handleStartGeneration(false)} 
+                        disabled={isGenerating} 
+                        className={`flex-1 w-full py-5 px-10 rounded-2xl font-black text-xs tracking-widest uppercase transition-all flex items-center justify-center gap-3 shadow-xl disabled:opacity-50 active:scale-95 ${isGenerating ? 'bg-slate-800 text-slate-400' : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200'}`}
+                      >
                           {isGenerating ? <Loader2 className="animate-spin" /> : <Sparkles size={18} />}
-                          {isGenerating ? 'Curating Menu...' : `Generate ${preferences.generationsCount || 3} Studio Recipes`}
+                          {isGenerating ? 'Curating Studio Menu...' : `Generate ${preferences.generationsCount || 3} Studio Recipes`}
                       </button>
                   </div>
               </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {generatedRecipes.length === 0 && !isGenerating && (
+                <div className="md:col-span-2 lg:col-span-3 py-24 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-[3rem] bg-white dark:bg-slate-900/50">
+                    <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-300 dark:text-slate-700">
+                        <Utensils size={32} />
+                    </div>
+                    <h3 className="text-xl font-black font-serif text-slate-900 dark:text-white mb-2">Studio Empty</h3>
+                    <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Adjust parameters above and generate your first menu</p>
+                </div>
+              )}
               {generatedRecipes.map(recipe => (
                   <div key={recipe.id} className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-2xl transition-all group overflow-hidden flex flex-col">
                       <div className="h-56 bg-slate-100 dark:bg-slate-800 relative cursor-pointer" onClick={() => openFullRecipe(recipe)}>
@@ -433,16 +380,14 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                       </div>
                       <div className="p-8 flex-1 flex flex-col">
                           <h3 className="text-2xl font-black mb-4 leading-tight text-slate-900 dark:text-slate-50 font-serif">{recipe.title}</h3>
-                          <div className="flex items-center gap-3 text-slate-400 text-xs font-black uppercase mb-6 tracking-widest">
+                          <div className="flex flex-wrap items-center gap-4 text-slate-400 text-xs font-black uppercase mb-6 tracking-widest">
                               <span className="flex items-center gap-1"><Clock size={14}/> {recipe.timeMinutes}m</span>
-                              <span>•</span>
-                              <span>{recipe.difficulty}</span>
+                              <span className="flex items-center gap-1"><Flame size={14} className="text-rose-500"/> {recipe.calories} kcal</span>
+                              <span className="flex items-center gap-1"><Beef size={14} className="text-amber-600"/> {recipe.protein}</span>
                           </div>
-                          <div className="flex gap-2 mt-auto pt-4">
-                            <button onClick={() => openFullRecipe(recipe)} className="flex-1 py-4 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-primary-600 hover:text-white transition-all">
-                                <Eye size={16}/> View Entry
-                            </button>
-                          </div>
+                          <button onClick={() => openFullRecipe(recipe)} className="mt-auto py-4 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-primary-600 hover:text-white transition-all">
+                              <Eye size={16}/> View Entry
+                          </button>
                       </div>
                   </div>
               ))}
@@ -465,12 +410,13 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                 <div key={recipe.id} className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden flex flex-col">
                     <h3 className="font-black text-2xl text-slate-900 dark:text-white font-serif mb-4">{recipe.title}</h3>
                     <p className="text-sm text-slate-500 mb-8 line-clamp-2 leading-relaxed">{recipe.description}</p>
+                    <div className="flex flex-wrap items-center gap-4 text-slate-400 text-[10px] font-black uppercase mb-6 tracking-widest">
+                        <span className="flex items-center gap-1"><Flame size={12}/> {recipe.calories} kcal</span>
+                        <span className="flex items-center gap-1"><Beef size={12}/> {recipe.protein}</span>
+                    </div>
                     <div className="flex gap-2 mt-auto">
                         <button onClick={() => openFullRecipe(recipe)} className="flex-1 py-4 bg-primary-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2">
                             <Eye size={16}/> Open Archives
-                        </button>
-                        <button onClick={(e) => initiatePlan(recipe, e)} className="p-4 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white rounded-2xl hover:bg-slate-200 transition-all">
-                            <Calendar size={18}/>
                         </button>
                     </div>
                 </div>
@@ -559,15 +505,27 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                                     placeholder="Recipe Name"
                                   />
                               </div>
-                              <div>
-                                  <label className="text-[10px] font-black uppercase text-slate-400 mb-2 block">Difficulty</label>
-                                  <select 
-                                    value={newRecipe.difficulty} 
-                                    onChange={e => setNewRecipe({...newRecipe, difficulty: e.target.value as any})}
-                                    className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-xl outline-none border border-slate-200 dark:border-slate-700 font-bold"
-                                  >
-                                      <option>Easy</option><option>Medium</option><option>Hard</option>
-                                  </select>
+                              <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                      <label className="text-[10px] font-black uppercase text-slate-400 mb-2 block">Difficulty</label>
+                                      <select 
+                                        value={newRecipe.difficulty} 
+                                        onChange={e => setNewRecipe({...newRecipe, difficulty: e.target.value as any})}
+                                        className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-xl outline-none border border-slate-200 dark:border-slate-700 font-bold"
+                                      >
+                                          <option>Easy</option><option>Medium</option><option>Hard</option>
+                                      </select>
+                                  </div>
+                                  <div>
+                                      <label className="text-[10px] font-black uppercase text-slate-400 mb-2 block">Protein (e.g. 24g)</label>
+                                      <input 
+                                        type="text" 
+                                        value={newRecipe.protein} 
+                                        onChange={e => setNewRecipe({...newRecipe, protein: e.target.value})}
+                                        className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-xl outline-none border border-slate-200 dark:border-slate-700 font-bold" 
+                                        placeholder="20g"
+                                      />
+                                  </div>
                               </div>
                           </div>
                           <div className="space-y-6">
