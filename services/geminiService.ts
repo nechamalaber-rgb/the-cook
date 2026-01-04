@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { Ingredient, UserPreferences, Recipe, RecipeGenerationOptions, Category, GroundedSource, ChatMessage } from "../types";
 
@@ -17,6 +18,8 @@ const sanitizeInventory = (items: Ingredient[]): string => {
     .map(i => `${i.name} (${i.quantity})`)
     .join(', ');
 };
+
+const CATEGORY_LIST = Object.values(Category).join(', ');
 
 export const generateSmartRecipes = async (pantryItems: Ingredient[], preferences: UserPreferences, options?: RecipeGenerationOptions, savedRecipes: Recipe[] = []): Promise<Recipe[]> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -93,14 +96,11 @@ export const generateSmartRecipes = async (pantryItems: Ingredient[], preference
 export const generateRecipeImage = async (recipe: Recipe): Promise<string | undefined> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     
-    const imagePrompt = `High-quality, professional photography of a real, traditional home-cooked dish: ${recipe.title}. 
-    STRICT FOCUS: Only the food on a plain ceramic plate or bowl.
-    ABSOLUTELY NO CUBES. NO GEOMETRIC SHAPES. NO GLOWING ELEMENTS. NO SCI-FI.
-    STRICT FORBIDDEN: 
-    - NO futuristic elements, NO molecular gastronomy.
-    - NO extra items: NO silverware, NO glasses, NO napkins, NO hands, NO people.
-    - NO text, logos, or synthetic overlays.
-    AESTHETIC: Natural warm kitchen lighting, rustic plating, high contrast, shallow depth of field. Authentically appetizing. 8k resolution.`;
+    const imagePrompt = `Professional food photography of: ${recipe.title}. 
+    High-end commercial style, vibrant colors, perfect studio lighting, macro shot showing exquisite detail and delicious texture. 
+    The food looks incredibly appetizing, well-plated, and fresh. 
+    Cinematic depth of field with a soft blurred background. 
+    High resolution, clean composition, 8k detail.`;
     
     try {
         const response = await ai.models.generateContent({
@@ -136,7 +136,9 @@ export const organizePastedText = async (text: string): Promise<{ name: string; 
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `Convert text to JSON inventory: [{name, quantity, category}]. Text: "${text}"`,
+      contents: `Convert text to JSON inventory: [{name, quantity, category}]. 
+      STRICT CATEGORIES: You MUST only use these exact strings for 'category': ${CATEGORY_LIST}. 
+      Text: "${text}"`,
       config: { responseMimeType: 'application/json' }
     });
     return JSON.parse(cleanJsonString(response.text || "[]"));
@@ -170,7 +172,8 @@ export const parseReceiptOrImage = async (base64Image: string): Promise<{ items:
       contents: {
         parts: [
           { inlineData: { data: base64Image, mimeType: 'image/jpeg' } },
-          { text: `Extract food inventory from this image. JSON: { "items": [{ "name", "category", "quantity" }] }.` }
+          { text: `Extract food inventory from this image. JSON: { "items": [{ "name", "category", "quantity" }] }. 
+          STRICT CATEGORIES: You MUST only use these exact strings for 'category': ${CATEGORY_LIST}.` }
         ],
       },
       config: { responseMimeType: 'application/json' }

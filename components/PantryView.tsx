@@ -21,35 +21,35 @@ const getCategoryColor = (category: string) => {
 const autoCategorize = (name: string): Category => {
     const lower = name.toLowerCase();
     
-    // Meat/Protein (Priority check to avoid "steak" falling into drinks)
-    if (lower.match(/steak|beef|chicken|pork|meat|fish|salmon|tuna|lamb|turkey|shrimp|bacon|sausage|ham|prawn|tilapia|ribs|fillet|loin/)) return Category.MEAT;
+    // Meat/Protein (Priority check)
+    if (lower.match(/steak|beef|chicken|pork|meat|fish|salmon|tuna|lamb|turkey|shrimp|bacon|sausage|ham|prawn|tilapia|ribs|fillet|loin|venison|duck|quail|prosciutto|salami|chorizo|jerky/)) return Category.MEAT;
 
     // Dairy & Eggs
-    if (lower.match(/milk|cheese|egg|yogurt|butter|cream|dairy|curd|sour cream|parmesan|mozzarella|cheddar|brie|feta|goat|ricotta|heavy cream|half and half/)) {
-        // Exception for nut butters
+    if (lower.match(/milk|cheese|egg|yogurt|butter|cream|dairy|curd|sour cream|parmesan|mozzarella|cheddar|brie|feta|goat|ricotta|heavy cream|half and half|provolone|swiss|gruyere|kefir|ghee/)) {
         if (lower.match(/peanut butter|almond butter|nut butter/)) return Category.PANTRY;
         return Category.DAIRY;
     }
     
-    // Pantry Staples (Including Nut Butters)
-    if (lower.match(/peanut butter|almond butter|oil|flour|sugar|salt|spice|pasta|rice|bean|lentil|sauce|vinegar|honey|syrup|ketchup|mustard|mayo|canned|soup|cereal|oats|nut/)) return Category.PANTRY;
+    // Produce (Fruits & Veggies & Herbs)
+    if (lower.match(/apple|banana|fruit|veg|spinach|lettuce|tomato|onion|garlic|potato|carrot|pepper|salad|berry|lemon|lime|broccoli|cabbage|cucumber|mushroom|kale|zucchini|asparagus|cilantro|parsley|dill|thyme|rosemary|sage|basil|mint|ginger|shallot|leek|celery|avocado|grape|orange|strawberry|blueberry|raspberry|mango|pineapple|peach|plum|cherry|date|fig|pear|corn|pea|bean|radish|beet|cauliflower|brussels/)) return Category.PRODUCE;
+
+    // Pantry Staples (Flavors, Spices, Grains)
+    if (lower.match(/honey|syrup|oil|flour|sugar|salt|spice|pasta|rice|bean|lentil|sauce|vinegar|ketchup|mustard|mayo|canned|soup|cereal|oats|nut|seed|cumin|paprika|turmeric|cinnamon|vanilla|pepper|broth|stock|bouillon|yeast|baking|jam|jelly|peanut butter|almond butter|tahini|soy sauce|teriyaki|salsa|hot sauce/)) return Category.PANTRY;
 
     // Beverages
-    if (lower.match(/water|soda|juice|beer|wine|coffee|tea|drink|sparkling|cola|pepsi|coke|whiskey|vodka|spirit|gin/)) return Category.BEVERAGE;
+    if (lower.match(/water|soda|juice|beer|wine|coffee|tea|drink|sparkling|cola|pepsi|coke|whiskey|vodka|spirit|gin|rum|tequila|espresso|latte|tonic|ale/)) return Category.BEVERAGE;
 
     // Bakery
-    if (lower.match(/bagel|bread|toast|sourdough|tortilla|wrap|roll|bun|muffin|pita|naan|baguette|ciabatta|croissant|focaccia|chips|snack/)) return Category.BAKERY;
-    
-    // Produce
-    if (lower.match(/apple|banana|fruit|veg|spinach|lettuce|tomato|onion|garlic|potato|carrot|pepper|salad|berry|lemon|lime|broccoli|cabbage|cucumber|mushroom|kale|zucchini|asparagus|cilantro|parsley/)) return Category.PRODUCE;
+    if (lower.match(/bagel|bread|toast|sourdough|tortilla|wrap|roll|bun|muffin|pita|naan|baguette|ciabatta|croissant|focaccia|chips|snack|cracker|pretzel|cookie|cake|pastry|brownie/)) return Category.BAKERY;
     
     // Frozen
-    if (lower.match(/frozen|ice|pizza|nugget|peas|sortet|gelato|waffle/)) return Category.FROZEN;
+    if (lower.match(/frozen|ice|pizza|nugget|peas|sorbet|gelato|waffle|fries|patties/)) return Category.FROZEN;
     
     return Category.PANTRY; 
 };
 
 const parseQuantity = (q: string): { num: number; suffix: string } => {
+    if (!q) return { num: 1, suffix: '' };
     const match = q.match(/^(\d+(?:\.\d+)?)\s*(.*)$/);
     if (match) {
         return { num: parseFloat(match[1]), suffix: match[2] || '' };
@@ -57,7 +57,6 @@ const parseQuantity = (q: string): { num: number; suffix: string } => {
     return { num: 1, suffix: q };
 };
 
-// Define the missing PantryViewProps interface
 interface PantryViewProps {
   pantries: Pantry[];
   activePantryId: string;
@@ -128,7 +127,7 @@ const PantryView: React.FC<PantryViewProps> = ({
       id: (Date.now() + idx).toString(),
       name,
       category: newItemCategory === 'Auto' ? autoCategorize(name) : newItemCategory as Category,
-      quantity: newItemQuantity || '1',
+      quantity: (newItemQuantity || '1').trim(),
       addedDate: new Date().toISOString().split('T')[0],
       expiryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     }));
@@ -153,8 +152,8 @@ const PantryView: React.FC<PantryViewProps> = ({
         const incoming: Ingredient[] = organized.map((item, idx) => ({
             id: `bulk-${Date.now()}-${idx}`,
             name: item.name,
-            category: item.category as Category,
-            quantity: item.quantity,
+            category: (item.category as Category) || autoCategorize(item.name),
+            quantity: item.quantity || '1',
             addedDate: new Date().toISOString().split('T')[0],
             expiryDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
         }));
@@ -165,6 +164,7 @@ const PantryView: React.FC<PantryViewProps> = ({
   };
 
   const normalizeCategory = (inputCat: string, nameHint: string): Category => {
+      if (Object.values(Category).includes(inputCat as Category)) return inputCat as Category;
       return autoCategorize(nameHint);
   };
 
@@ -183,7 +183,7 @@ const PantryView: React.FC<PantryViewProps> = ({
           id: Date.now().toString() + idx,
           name: item.name,
           category: normalizeCategory(item.category || '', item.name),
-          quantity: item.quantity,
+          quantity: item.quantity || '1',
           addedDate: new Date().toISOString().split('T')[0]
         }));
         setItems(prev => mergeItems(prev, incoming));
@@ -215,8 +215,8 @@ const PantryView: React.FC<PantryViewProps> = ({
           <h1 className="text-4xl font-serif font-black text-slate-900 dark:text-white tracking-tighter">Inventory</h1>
           <div className="flex items-center gap-4 mt-2">
              <div className="bg-slate-100 dark:bg-slate-800 rounded-lg p-1 flex">
-                 <button onClick={() => setViewMode('grid')} className={`p-1.5 rounded-md transition-all ${viewMode === 'grid' ? 'bg-white dark:bg-slate-700 shadow-sm text-primary-600' : 'text-slate-400'}`}><Grid size={16}/></button>
-                 <button onClick={() => setViewMode('list')} className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-white dark:bg-slate-700 shadow-sm text-primary-600' : 'text-slate-400'}`}><List size={16}/></button>
+                 <button onClick={() => setViewMode('grid')} className={`p-1.5 rounded-md transition-all focus:outline-none ${viewMode === 'grid' ? 'bg-white dark:bg-slate-700 shadow-sm text-primary-600' : 'text-slate-400'}`}><Grid size={16}/></button>
+                 <button onClick={() => setViewMode('list')} className={`p-1.5 rounded-md transition-all focus:outline-none ${viewMode === 'list' ? 'bg-white dark:bg-slate-700 shadow-sm text-primary-600' : 'text-slate-400'}`}><List size={16}/></button>
              </div>
              <p className="text-slate-500 font-bold text-xs uppercase tracking-widest">{items.length} cards</p>
           </div>
@@ -230,14 +230,14 @@ const PantryView: React.FC<PantryViewProps> = ({
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search pantry..." 
-                    className="w-full bg-slate-100 dark:bg-slate-900 border-none outline-none pl-10 pr-4 py-3 rounded-2xl text-sm font-bold placeholder:text-slate-400 focus:ring-2 focus:ring-primary-500/20 transition-all"
+                    className="w-full bg-slate-100 dark:bg-slate-900 border-none outline-none pl-10 pr-4 py-3 rounded-2xl text-sm font-bold placeholder:text-slate-400 focus:ring-2 focus:ring-primary-500/30 transition-all"
                  />
              </div>
-            <button onClick={() => fileInputRef.current?.click()} className="p-3 bg-white dark:bg-slate-900 rounded-2xl text-slate-400 hover:text-primary-600 transition-all border border-slate-200 dark:border-slate-800 shadow-sm">
+            <button onClick={() => fileInputRef.current?.click()} className="p-3 bg-white dark:bg-slate-900 rounded-2xl text-slate-400 hover:text-primary-600 transition-all border border-slate-200 dark:border-slate-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500/20">
                 {isScanning ? <Loader2 size={20} className="animate-spin" /> : <ScanLine size={20} />}
             </button>
             <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileUpload} />
-            <button onClick={() => setIsAdding(true)} className="flex items-center justify-center gap-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-5 py-3 rounded-2xl font-black shadow-lg hover:scale-105 transition-all">
+            <button onClick={() => setIsAdding(true)} className="flex items-center justify-center gap-2 bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-5 py-3 rounded-2xl font-black shadow-lg hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-primary-500/40">
                 <Plus size={18} />
                 <span className="text-xs uppercase tracking-widest hidden sm:inline">Add Item</span>
             </button>
@@ -250,16 +250,16 @@ const PantryView: React.FC<PantryViewProps> = ({
                 <button
                     key={p.id}
                     onClick={() => setActivePantryId(p.id)}
-                    className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all border flex-shrink-0 flex items-center gap-2 ${
+                    className={`px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all border flex-shrink-0 flex items-center gap-2 focus:outline-none ${
                         activePantryId === p.id 
-                        ? 'bg-slate-900 dark:bg-slate-200 text-white dark:text-slate-900 border-transparent shadow-lg' 
+                        ? 'bg-slate-900 dark:bg-slate-200 text-white dark:text-slate-900 border-transparent shadow-lg ring-1 ring-primary-500/30' 
                         : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500 hover:border-slate-400'
                     }`}
                 >
                     <Box size={14} /> {p.name}
                 </button>
             ))}
-            <button onClick={() => setIsAddingPantry(true)} className="px-4 py-2.5 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 text-slate-400 hover:text-primary-500 hover:border-primary-400 transition-all flex items-center gap-2 text-xs font-black uppercase tracking-widest flex-shrink-0">
+            <button onClick={() => setIsAddingPantry(true)} className="px-4 py-2.5 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 text-slate-400 hover:text-primary-500 hover:border-primary-400 transition-all flex items-center gap-2 text-xs font-black uppercase tracking-widest flex-shrink-0 focus:outline-none">
                 <FolderPlus size={14} /> New
             </button>
          </div>
@@ -270,7 +270,7 @@ const PantryView: React.FC<PantryViewProps> = ({
              <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
-                className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all border ${
+                className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all border focus:outline-none ${
                     activeCategory === cat 
                     ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-800 text-primary-700 dark:text-primary-400' 
                     : 'bg-transparent border-transparent text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
@@ -296,12 +296,11 @@ const PantryView: React.FC<PantryViewProps> = ({
                           </div>
                           <div className="flex items-center gap-6">
                               <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 rounded-lg p-1">
-                                  <button onClick={() => adjustQuantity(item.id, -1)} className="p-1 text-slate-400 hover:text-slate-900 dark:hover:text-white"><Minus size={12}/></button>
+                                  <button onClick={() => adjustQuantity(item.id, -1)} className="p-1 text-slate-400 hover:text-slate-900 dark:hover:text-white focus:outline-none"><Minus size={12}/></button>
                                   <span className="text-xs font-bold w-12 text-center">{item.quantity}</span>
-                                  <button onClick={() => adjustQuantity(item.id, 1)} className="p-1 text-slate-400 hover:text-slate-900 dark:hover:text-white"><Plus size={12}/></button>
+                                  <button onClick={() => adjustQuantity(item.id, 1)} className="p-1 text-slate-400 hover:text-slate-900 dark:hover:text-white focus:outline-none"><Plus size={12}/></button>
                               </div>
-                              {/* Fixed: Use item.id instead of non-existent id */}
-                              <button onClick={() => handleDelete(item.id)} className="text-slate-300 hover:text-rose-500 transition-colors"><Trash2 size={16}/></button>
+                              <button onClick={() => handleDelete(item.id)} className="text-slate-300 hover:text-rose-500 transition-colors focus:outline-none"><Trash2 size={16}/></button>
                           </div>
                       </div>
                   );
@@ -316,11 +315,11 @@ const PantryView: React.FC<PantryViewProps> = ({
                           <p className="text-[8px] font-black uppercase text-slate-400 tracking-wider mt-1">{item.category}</p>
                       </div>
                       <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-800 rounded-lg p-1 mt-auto">
-                          <button onClick={() => adjustQuantity(item.id, -1)} className="w-5 h-5 rounded-md hover:bg-white dark:hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-slate-900 transition-colors"><Minus size={10}/></button>
+                          <button onClick={() => adjustQuantity(item.id, -1)} className="w-5 h-5 rounded-md hover:bg-white dark:hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-slate-900 transition-colors focus:outline-none"><Minus size={10}/></button>
                           <span className="text-[10px] font-black text-slate-700 dark:text-slate-300 px-1 truncate max-w-[50px]">{item.quantity}</span>
-                          <button onClick={() => adjustQuantity(item.id, 1)} className="w-5 h-5 rounded-md hover:bg-white dark:hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-slate-900 transition-colors"><Plus size={10}/></button>
+                          <button onClick={() => adjustQuantity(item.id, 1)} className="w-5 h-5 rounded-md hover:bg-white dark:hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-slate-900 transition-colors focus:outline-none"><Plus size={10}/></button>
                       </div>
-                      <button onClick={() => handleDelete(item.id)} className="absolute top-2 right-2 text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity p-1 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm rounded-md">
+                      <button onClick={() => handleDelete(item.id)} className="absolute top-2 right-2 text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity p-1 bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm rounded-md focus:outline-none">
                         <Trash2 size={12} />
                       </button>
                   </div>
@@ -333,43 +332,43 @@ const PantryView: React.FC<PantryViewProps> = ({
               <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] p-8 shadow-2xl border border-slate-200 dark:border-slate-800 animate-slide-up">
                   <div className="flex justify-between items-center mb-6">
                       <h2 className="text-2xl font-black font-serif text-slate-900 dark:text-white">Restock Studio</h2>
-                      <button onClick={() => setIsAdding(false)} className="p-2 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"><X /></button>
+                      <button onClick={() => setIsAdding(false)} className="p-2 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors focus:outline-none"><X /></button>
                   </div>
                   <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl mb-6">
-                      <button onClick={() => setAddMode('single')} className={`flex-1 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${addMode === 'single' ? 'bg-white dark:bg-slate-700 text-primary-600 shadow-sm' : 'text-slate-400'}`}>Single Item</button>
-                      <button onClick={() => setAddMode('list')} className={`flex-1 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all ${addMode === 'list' ? 'bg-white dark:bg-slate-700 text-primary-600 shadow-sm' : 'text-slate-400'}`}>Bulk List</button>
+                      <button onClick={() => setAddMode('single')} className={`flex-1 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all focus:outline-none ${addMode === 'single' ? 'bg-white dark:bg-slate-700 text-primary-600 shadow-sm' : 'text-slate-400'}`}>Single Item</button>
+                      <button onClick={() => setAddMode('list')} className={`flex-1 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all focus:outline-none ${addMode === 'list' ? 'bg-white dark:bg-slate-700 text-primary-600 shadow-sm' : 'text-slate-400'}`}>Bulk List</button>
                   </div>
                   {addMode === 'single' ? (
                     <div className="space-y-6">
                         <div>
                             <label className="text-xs font-black uppercase tracking-widest text-slate-400 mb-2 block">Item Name(s)</label>
-                            <input autoFocus type="text" value={newItemName} onChange={e => setNewItemName(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl outline-none border border-slate-200 dark:border-slate-700 font-bold dark:text-white focus:border-primary-500 transition-all text-lg" placeholder="e.g. Eggs, Milk, Bread" />
+                            <input autoFocus type="text" value={newItemName} onChange={e => setNewItemName(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl outline-none border border-slate-200 dark:border-slate-700 font-bold dark:text-white focus:border-primary-500 transition-all text-lg focus:ring-2 focus:ring-primary-500/20" placeholder="e.g. Eggs, Milk, Bread" />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <label className="text-xs font-black uppercase tracking-widest text-slate-400 mb-2 block">Quantity</label>
-                                <input type="text" value={newItemQuantity} onChange={e => setNewItemQuantity(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl outline-none border border-slate-200 dark:border-slate-700 font-bold dark:text-white focus:border-primary-500 transition-all" placeholder="1" />
+                                <input type="text" value={newItemQuantity} onChange={e => setNewItemQuantity(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl outline-none border border-slate-200 dark:border-slate-700 font-bold dark:text-white focus:border-primary-500 transition-all focus:ring-2 focus:ring-primary-500/20" placeholder="1" />
                             </div>
                             <div>
                                 <label className="text-xs font-black uppercase tracking-widest text-slate-400 mb-2 block">Category</label>
-                                <select value={newItemCategory} onChange={e => setNewItemCategory(e.target.value as any)} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl outline-none border border-slate-200 dark:border-slate-700 font-bold dark:text-white appearance-none">
+                                <select value={newItemCategory} onChange={e => setNewItemCategory(e.target.value as any)} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl outline-none border border-slate-200 dark:border-slate-700 font-bold dark:text-white appearance-none focus:ring-2 focus:ring-primary-500/20">
                                     <option value="Auto">Auto-Organize</option>
                                     {Object.values(Category).map(c => <option key={c} value={c}>{c}</option>)}
                                 </select>
                             </div>
                         </div>
-                        <button onClick={handleManualAdd} className="w-full py-5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl mt-4">Confirm Stock</button>
+                        <button onClick={handleManualAdd} className="w-full py-5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl mt-4 focus:outline-none focus:ring-2 focus:ring-primary-500/50 hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors">Confirm Stock</button>
                     </div>
                   ) : (
                     <div className="space-y-6">
                         <div>
                             <label className="text-xs font-black uppercase tracking-widest text-slate-400 mb-2 block">Paste Shopping List</label>
-                            <textarea autoFocus value={bulkList} onChange={e => setBulkList(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl outline-none border border-slate-200 dark:border-slate-700 font-bold dark:text-white focus:border-primary-500 transition-all h-40 resize-none text-sm" placeholder="1 dozen eggs, 1 gallon milk, 2 lbs chicken..." />
+                            <textarea autoFocus value={bulkList} onChange={e => setBulkList(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl outline-none border border-slate-200 dark:border-slate-700 font-bold dark:text-white focus:border-primary-500 transition-all h-40 resize-none text-sm focus:ring-2 focus:ring-primary-500/20" placeholder="1 dozen eggs, 1 gallon milk, 2 lbs chicken..." />
                         </div>
                         <button 
                             onClick={handleBulkAdd} 
                             disabled={isProcessingBulk}
-                            className="w-full py-5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl mt-4 flex items-center justify-center gap-2"
+                            className="w-full py-5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl mt-4 flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-primary-500/50"
                         >
                             {isProcessingBulk ? <Loader2 className="animate-spin" /> : <Sparkles size={18} />}
                             {isProcessingBulk ? 'Organizing & Deduplicating...' : 'Import into Studio'}
@@ -387,11 +386,11 @@ const PantryView: React.FC<PantryViewProps> = ({
                   <div className="space-y-6">
                       <div>
                           <label className="text-xs font-black uppercase tracking-widest text-slate-400 mb-2 block">Studio Name</label>
-                          <input autoFocus type="text" value={newPantryName} onChange={e => setNewPantryName(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleCreatePantry()} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl outline-none border border-slate-200 dark:border-slate-700 font-bold dark:text-white focus:border-primary-500 transition-all" placeholder="e.g. Vacation Kitchen" />
+                          <input autoFocus type="text" value={newPantryName} onChange={e => setNewPantryName(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleCreatePantry()} className="w-full bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl outline-none border border-slate-200 dark:border-slate-700 font-bold dark:text-white focus:border-primary-500 transition-all focus:ring-2 focus:ring-primary-500/20" placeholder="e.g. Vacation Kitchen" />
                       </div>
                       <div className="flex gap-3">
-                          <button onClick={() => setIsAddingPantry(false)} className="flex-1 py-4 text-xs font-black uppercase tracking-widest text-slate-400">Cancel</button>
-                          <button onClick={handleCreatePantry} className="flex-1 py-4 bg-primary-600 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-lg">Confirm</button>
+                          <button onClick={() => setIsAddingPantry(false)} className="flex-1 py-4 text-xs font-black uppercase tracking-widest text-slate-400 focus:outline-none">Cancel</button>
+                          <button onClick={handleCreatePantry} className="flex-1 py-4 bg-primary-600 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-lg focus:outline-none focus:ring-2 focus:ring-primary-500/50">Confirm</button>
                       </div>
                   </div>
               </div>
