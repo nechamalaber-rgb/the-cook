@@ -7,7 +7,15 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#0f172a">
-    <title>Prepzu</title>
+    <meta name="description" content="Prepzu - The AI-powered pantry manager and recipe studio." />
+    <meta property="og:title" content="Prepzu Studio" />
+    <meta property="og:description" content="Turn your pantry into a culinary masterpiece with AI." />
+    <meta property="og:image" content="https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=1200&q=80" />
+    
+    <link rel="manifest" href="metadata.json" />
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3565/3565407.png" />
+    
+    <title>Prepzu | AI Culinary Studio</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -29,7 +37,7 @@
                 100: '#f1ece0',
                 200: '#e5dcc5',
                 300: '#d5c6a1',
-                400: '#c2a382', // Sophisticated Tan
+                400: '#c2a382', 
                 500: '#b08d6a', 
                 600: '#9d7658',
                 700: '#825f4a',
@@ -48,19 +56,6 @@
                 700: '#c2410c',
                 800: '#9a3412',
                 900: '#7c2d12',
-              },
-              slate: {
-                50: '#f8fafc', 
-                100: '#f1f5f9',
-                200: '#e2e8f0',
-                300: '#cbd5e1',
-                400: '#94a3b8',
-                500: '#64748b',
-                600: '#475569',
-                700: '#334155',
-                800: '#1e293b',
-                900: '#0f172a', 
-                950: '#090e1a', // Deep Navy/Black (Lightened from #020617)
               }
             },
             fontFamily: {
@@ -70,11 +65,13 @@
               'fade-in': 'fadeIn 0.4s ease-out',
               'slide-up': 'slideUp 0.4s ease-out',
               'slide-down': 'slideDown 0.3s ease-out',
+              'pulse-soft': 'pulseSoft 2s infinite',
             },
             keyframes: {
               fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
               slideUp: { '0%': { transform: 'translateY(20px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } },
-              slideDown: { '0%': { transform: 'translateY(-10px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } }
+              slideDown: { '0%': { transform: 'translateY(-10px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } },
+              pulseSoft: { '0%, 100%': { opacity: '1' }, '50%': { opacity: '0.7' } }
             }
           },
         },
@@ -90,6 +87,7 @@
         color: #0f172a; 
         -webkit-tap-highlight-color: transparent; 
         transition: background-color 0.3s ease;
+        overscroll-behavior-y: contain;
       }
       .dark body { background-color: #090e1a; color: #f8fafc; }
       
@@ -105,6 +103,31 @@
       .dark .glass-panel {
         background: rgba(15, 23, 42, 0.8);
         border: 1px solid rgba(255, 255, 255, 0.05);
+      }
+
+      /* Custom Range Input Styling for Production Polish */
+      input[type=range] {
+        -webkit-appearance: none;
+        background: transparent;
+      }
+      input[type=range]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        height: 20px;
+        width: 20px;
+        border-radius: 50%;
+        background: #b08d6a;
+        cursor: pointer;
+        margin-top: -6px;
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+      }
+      input[type=range]::-webkit-slider-runnable-track {
+        width: 100%;
+        height: 8px;
+        background: #e2e8f0;
+        border-radius: 4px;
+      }
+      .dark input[type=range]::-webkit-slider-runnable-track {
+        background: #1e293b;
       }
     </style>
   <script type="importmap">

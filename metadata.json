@@ -1,8 +1,22 @@
 {
   "name": "Prepzu",
-  "description": "Your intelligent kitchen companion. Manage pantry inventory, reduce waste, and discover contextual recipes tailored to what you have.",
+  "short_name": "Prepzu",
+  "description": "Your intelligent kitchen companion. Manage pantry inventory, reduce waste, and discover contextual recipes with macro-tracking tailored to what you have.",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3565/3565407.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#0f172a",
+  "background_color": "#0f172a",
   "requestFramePermissions": [
     "camera",
-    "microphone"
+    "microphone",
+    "geolocation"
   ]
 }

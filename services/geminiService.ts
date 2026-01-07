@@ -1,6 +1,6 @@
 
-import { GoogleGenAI, Type } from "@google/genai";
-import { Ingredient, UserPreferences, Recipe, RecipeGenerationOptions, Category, GroundedSource, ChatMessage } from "../types";
+import { GoogleGenAI, Type, Modality } from "@google/genai";
+import { Ingredient, UserPreferences, Recipe, RecipeGenerationOptions, Category, ChatMessage } from "../types";
 
 const cleanJsonString = (str: string) => {
   if (!str) return "{}";
@@ -13,55 +13,181 @@ const cleanJsonString = (str: string) => {
   return cleaned;
 };
 
-const sanitizeInventory = (items: Ingredient[]): string => {
-  return items
-    .map(i => `${i.name} (${i.quantity})`)
-    .join(', ');
+const withRetry = async <T>(fn: () => Promise<T>, retries = 3, delay = 1000): Promise<T> => {
+  try {
+    return await fn();
+  } catch (error) {
+    if (retries <= 0) throw error;
+    await new Promise(resolve => setTimeout(resolve, delay));
+    return withRetry(fn, retries - 1, delay * 2);
+  }
 };
 
-const CATEGORY_LIST = Object.values(Category).join(', ');
+const sanitizeInventory = (items: Ingredient[]): string => {
+  return items.map(i => `${i.name} (${i.quantity})`).join(', ');
+};
 
-export const generateSmartRecipes = async (pantryItems: Ingredient[], preferences: UserPreferences, options?: RecipeGenerationOptions, savedRecipes: Recipe[] = []): Promise<Recipe[]> => {
+// --- Speech Helpers ---
+function decodeBase64(base64: string) {
+  const binaryString = atob(base64);
+  const len = binaryString.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
+}
+
+async function decodeAudioData(
+  data: Uint8Array,
+  ctx: AudioContext,
+  sampleRate: number,
+  numChannels: number,
+): Promise<AudioBuffer> {
+  const dataInt16 = new Int16Array(data.buffer);
+  const frameCount = dataInt16.length / numChannels;
+  const buffer = ctx.createBuffer(numChannels, frameCount, sampleRate);
+
+  for (let channel = 0; channel < numChannels; channel++) {
+    const channelData = buffer.getChannelData(channel);
+    for (let i = 0; i < frameCount; i++) {
+      channelData[i] = dataInt16[i * numChannels + channel] / 32768.0;
+    }
+  }
+  return buffer;
+}
+
+export const speakText = async (text: string, voiceName: string = 'Kore') => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const sanitizedPantry = sanitizeInventory(pantryItems);
-  
-  const servings = options?.servings || preferences.householdSize || 2;
-  const count = options?.recipeCount || preferences.generationsCount || 3;
-  const mealType = options?.mealType || 'Any';
-  const maxTime = options?.maxTime || 'Any';
-  const complexity = options?.complexity || (preferences.skillLevel === 'Advanced' ? 'Gourmet' : 'Simple');
-  const excluded = options?.excludedIngredients?.join(', ') || 'None';
-  const custom = options?.customRequest || 'None';
-
-  const instructions = `
-    ROLE: You are the Prepzu Studio Engine.
-    
-    STRICT MANDATE: You MUST strictly adhere to the user's selected parameters.
-    - If MEAL TYPE is "Breakfast", ONLY return breakfast recipes.
-    - If MEAL TYPE is "Dinner", ONLY return dinner recipes.
-    - If MAX TIME is specified (e.g., 30), do NOT exceed it.
-    - DIETARY: ${preferences.dietaryRestrictions.join(', ') || 'None'}.
-    - ALLERGIES: ${preferences.allergies.join(', ') || 'None'} (NEVER include).
-    - APPLIANCES: ${preferences.appliances.join(', ') || 'Stove, Oven'}.
-    - INVENTORY: [${sanitizedPantry}].
-
-    REALISM & ANTI-GEOMETRIC MANDATE (CRITICAL):
-    1. REAL HOME FOOD ONLY: ABSOLUTELY NO CUBES, no geometric food, no molecular gastronomy, no experimental futuristic concepts. 
-    2. RECOGNIZABLE DISHES: Generate dishes a normal person cooks in a standard kitchen (stews, pastas, roasts, salads, stir-frys, tacos, soups).
-    3. TRADITIONAL PRESENTATION: No stacked cubes or spheres. Presentation must look like a standard home meal.
-    4. PRECISION STEPS: Every instruction step must be detailed but concise. 
-    5. TECHNICAL SPECIFICS: Mention heat levels (e.g., "Medium heat") and visual cues (e.g., "until golden brown").
-
-    TASK: Generate ${count} HIGHLY REALISTIC recipes scaled for ${servings} people.
-    
-    OUTPUT: JSON array of recipe objects.
-  `;
-
   try {
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: "gemini-2.5-flash-preview-tts",
+      contents: [{ parts: [{ text: `Say with chef personality: ${text}` }] }],
+      config: {
+        responseModalities: [Modality.AUDIO],
+        speechConfig: {
+          voiceConfig: {
+            prebuiltVoiceConfig: { voiceName },
+          },
+        },
+      },
+    });
+
+    const base64Audio = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+    if (!base64Audio) return;
+
+    const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
+    const audioBytes = decodeBase64(base64Audio);
+    const audioBuffer = await decodeAudioData(audioBytes, audioCtx, 24000, 1);
+    
+    const source = audioCtx.createBufferSource();
+    source.buffer = audioBuffer;
+    source.connect(audioCtx.destination);
+    source.start();
+  } catch (error) {
+    console.error("TTS generation failed", error);
+  }
+};
+
+/**
+ * Generates an illustrative icon for an ingredient.
+ */
+export const generateIngredientImage = async (name: string): Promise<string | undefined> => {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const prompt = `A single minimalist flat-design 2D illustrative icon of "${name}" on a solid soft neutral background, clean vector lines, professional culinary illustration style, not realistic.`;
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash-image',
+            contents: { parts: [{ text: prompt }] },
+            config: { imageConfig: { aspectRatio: "1:1" } }
+        });
+        for (const candidate of response.candidates || []) {
+            if (candidate.content?.parts) {
+                for (const part of candidate.content.parts) {
+                    if (part.inlineData) return part.inlineData.data;
+                }
+            }
+        }
+        return undefined;
+    } catch (error) { return undefined; }
+};
+
+/**
+ * Generates a cinematic video explainer of the user's current kitchen status.
+ */
+export const generateKitchenTrailer = async (
+    pantryItems: Ingredient[], 
+    preferences: UserPreferences,
+    onProgress: (msg: string) => void
+): Promise<{ videoUrl: string; script: string }> => {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const inventory = pantryItems.map(i => i.name).join(', ');
+
+    onProgress("Synthesizing Cinematic Script...");
+    const scriptResponse = await ai.models.generateContent({
+        model: 'gemini-3-pro-preview',
+        contents: `Write a 15-second cinematic trailer script for a kitchen studio. 
+                   Focus on these items: ${inventory}. 
+                   The tone should be 'Epic Studio' like a movie trailer.
+                   JSON Output: {"script": "string", "visualPrompt": "string"}`
+    });
+    
+    const { script, visualPrompt } = JSON.parse(cleanJsonString(scriptResponse.text || "{}"));
+
+    onProgress("Orchestrating Veo Synthesis...");
+    let operation = await ai.models.generateVideos({
+        model: 'veo-3.1-fast-generate-preview',
+        prompt: `Cinematic high-end kitchen footage: ${visualPrompt}, macro shots, steam, professional lighting, 4k, moody.`,
+        config: {
+            numberOfVideos: 1,
+            resolution: '1080p',
+            aspectRatio: '16:9'
+        }
+    });
+
+    while (!operation.done) {
+        onProgress(`Synthesizing Frame Logic... (${new Date().toLocaleTimeString()})`);
+        await new Promise(resolve => setTimeout(resolve, 8000));
+        operation = await ai.operations.getVideosOperation({ operation });
+    }
+
+    const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
+    const finalVideoUrl = `${downloadLink}&key=${process.env.API_KEY}`;
+
+    return { videoUrl: finalVideoUrl, script };
+};
+
+export const generateSmartRecipes = async (pantryItems: Ingredient[], preferences: UserPreferences, options?: RecipeGenerationOptions, savedRecipes?: Recipe[]): Promise<Recipe[]> => {
+  return withRetry(async () => {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const sanitizedPantry = sanitizeInventory(pantryItems);
+    
+    const servings = options?.servings || preferences.householdSize || 2;
+    const count = options?.recipeCount || preferences.generationsCount || 3;
+    
+    const instructions = `
+      Act as a Precision Nutritionist and Michelin-Starred Executive Chef. 
+      Task: Generate ${count} detailed recipes in JSON.
+      
+      CONTEXT:
+      - Inventory: ${sanitizedPantry}.
+      - Goal: ${preferences.healthGoal}.
+      - Cuisine: ${preferences.cuisinePreferences.join(', ')}.
+      - Household Size: ${servings} people.
+      
+      CRITICAL ACCURACY REQUIREMENTS:
+      1. SERVINGS: Every recipe MUST be scaled for EXACTLY ${servings} servings. 
+      2. NUTRITION: Calculate calories, protein, carbs, and fat PER INDIVIDUAL SERVING. 
+      3. LOGIC: Use at least 3 items from inventory.
+      
+      OUTPUT FORMAT: Strict JSON.
+    `;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-pro-preview',
       contents: instructions,
       config: {
+        thinkingConfig: { thinkingBudget: 2000 },
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.ARRAY,
@@ -72,36 +198,78 @@ export const generateSmartRecipes = async (pantryItems: Ingredient[], preference
               title: { type: Type.STRING },
               description: { type: Type.STRING },
               timeMinutes: { type: Type.INTEGER },
+              servings: { type: Type.INTEGER },
+              mealType: { type: Type.STRING },
               difficulty: { type: Type.STRING, enum: ['Easy', 'Medium', 'Hard'] },
               ingredients: { type: Type.ARRAY, items: { type: Type.STRING } },
               instructions: { type: Type.ARRAY, items: { type: Type.STRING } },
               missingIngredients: { type: Type.ARRAY, items: { type: Type.STRING } },
               calories: { type: Type.INTEGER },
               protein: { type: Type.STRING },
+              carbs: { type: Type.STRING },
+              fat: { type: Type.STRING },
               matchScore: { type: Type.INTEGER },
+              isFitnessMatch: { type: Type.BOOLEAN },
               tips: { type: Type.ARRAY, items: { type: Type.STRING } }
             },
-            required: ['id', 'title', 'timeMinutes', 'ingredients', 'instructions', 'matchScore', 'missingIngredients', 'calories', 'protein', 'description']
+            required: ['id', 'title', 'timeMinutes', 'ingredients', 'instructions', 'matchScore', 'missingIngredients', 'calories', 'protein', 'carbs', 'fat', 'description', 'servings', 'mealType', 'isFitnessMatch']
           }
         }
       }
     });
-    return JSON.parse(cleanJsonString(response.text || "[]"));
-  } catch (error) { 
-    console.error("Studio Engine Error:", error);
-    return []; 
-  }
+    const parsed = JSON.parse(cleanJsonString(response.text || "[]"));
+    return parsed.map((r: any) => ({ ...r, id: r.id || Math.random().toString(), reviews: [] }));
+  });
+};
+
+export const processChefChatPlan = async (
+    pantryItems: Ingredient[], 
+    userInput: string,
+    preferences: UserPreferences
+): Promise<{ concept: string; description: string; items: { name: string; category: string }[] }> => {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const inventoryList = pantryItems.map(i => i.name).join(', ');
+    
+    const instructions = `
+      Identify exactly what is MISSING to create a chef-quality meal for ${preferences.householdSize} people.
+      User Input: "${userInput}"
+      Current Inventory: ${inventoryList}.
+    `;
+
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-3-flash-preview',
+            contents: instructions,
+            config: { 
+              responseMimeType: "application/json",
+              responseSchema: {
+                type: Type.OBJECT,
+                properties: {
+                  concept: { type: Type.STRING },
+                  description: { type: Type.STRING },
+                  items: {
+                    type: Type.ARRAY,
+                    items: {
+                      type: Type.OBJECT,
+                      properties: {
+                        name: { type: Type.STRING },
+                        category: { type: Type.STRING }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+        });
+        return JSON.parse(cleanJsonString(response.text || "{}"));
+    } catch (error) { 
+        return { concept: "Chef's Special", description: "A tailored dish designed for your pantry.", items: [] }; 
+    }
 };
 
 export const generateRecipeImage = async (recipe: Recipe): Promise<string | undefined> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    
-    const imagePrompt = `Professional food photography of: ${recipe.title}. 
-    High-end commercial style, vibrant colors, perfect studio lighting, macro shot showing exquisite detail and delicious texture. 
-    The food looks incredibly appetizing, well-plated, and fresh. 
-    Cinematic depth of field with a soft blurred background. 
-    High resolution, clean composition, 8k detail.`;
-    
+    const imagePrompt = `Professional food photography of ${recipe.title}, high resolution, minimalist plate, 8k.`;
     try {
         const response = await ai.models.generateContent({
             model: 'gemini-2.5-flash-image',
@@ -119,49 +287,36 @@ export const generateRecipeImage = async (recipe: Recipe): Promise<string | unde
     } catch (error) { return undefined; }
 };
 
-export const estimateMealCalories = async (mealDescription: string): Promise<number> => {
+export const chatWithChef = async (messages: ChatMessage[], userInput: string, pantryItems: Ingredient[], activeRecipe?: Recipe | null): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const history = messages.map(m => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.text }] }));
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `Estimate calories for: "${mealDescription}". Return JSON {calories: number}.`,
-      config: { responseMimeType: "application/json" }
+      contents: [...history, { role: 'user', parts: [{ text: userInput }] }],
+      config: { 
+        thinkingConfig: { thinkingBudget: 0 },
+        systemInstruction: `You are Chef Prepzu AI. Help with cooking and inventory based on: ${pantryItems.map(i => i.name).join(', ')}.`
+      }
     });
-    return JSON.parse(cleanJsonString(response.text || "{}")).calories || 0;
-  } catch (error) { return 0; }
+    return response.text || "";
+  } catch (error) { return "Studio link unstable."; }
 };
 
-export const organizePastedText = async (text: string): Promise<{ name: string; quantity: string; category: Category }[]> => {
+export const analyzePantryStatus = async (pantryItems: Ingredient[]): Promise<{ tip: string; urgency: 'low' | 'medium' | 'high' }> => {
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const sanitized = sanitizeInventory(pantryItems);
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `Convert text to JSON inventory: [{name, quantity, category}]. 
-      STRICT CATEGORIES: You MUST only use these exact strings for 'category': ${CATEGORY_LIST}. 
-      Text: "${text}"`,
-      config: { responseMimeType: 'application/json' }
+      contents: `Current Inventory: ${sanitized}. Provide a JSON logistics tip: {"tip": "string", "urgency": "low|medium|high"}`,
+      config: { 
+        thinkingConfig: { thinkingBudget: 0 },
+        responseMimeType: "application/json" 
+      }
     });
-    return JSON.parse(cleanJsonString(response.text || "[]"));
-  } catch (error) { return []; }
-};
-
-export const culinarySearch = async (query: string): Promise<{ text: string; sources: GroundedSource[] }> => {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
-            contents: query,
-            config: { tools: [{ googleSearch: {} }] }
-        });
-        const sources: GroundedSource[] = [];
-        const chunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
-        if (chunks) {
-            chunks.forEach((chunk: any) => {
-                if (chunk.web) sources.push({ uri: chunk.web.uri, title: chunk.web.title });
-            });
-        }
-        return { text: response.text || "", sources };
-    } catch (error) { return { text: "Search currently offline.", sources: [] }; }
+    return JSON.parse(cleanJsonString(response.text || '{"tip": "Inventory stable.", "urgency": "low"}'));
+  } catch (error) { return { tip: "Continue discovery.", urgency: "low" }; }
 };
 
 export const parseReceiptOrImage = async (base64Image: string): Promise<{ items: { name: string; category: string; quantity: string }[] }> => {
@@ -172,85 +327,78 @@ export const parseReceiptOrImage = async (base64Image: string): Promise<{ items:
       contents: {
         parts: [
           { inlineData: { data: base64Image, mimeType: 'image/jpeg' } },
-          { text: `Extract food inventory from this image. JSON: { "items": [{ "name", "category", "quantity" }] }. 
-          STRICT CATEGORIES: You MUST only use these exact strings for 'category': ${CATEGORY_LIST}.` }
+          { text: `Identify all food items in JSON: { "items": [{ "name", "category", "quantity" }] }.` }
         ],
       },
-      config: { responseMimeType: 'application/json' }
+      config: { 
+        thinkingConfig: { thinkingBudget: 0 },
+        responseMimeType: 'application/json' 
+      }
     });
     return JSON.parse(cleanJsonString(response.text || "{}"));
   } catch (error) { return { items: [] }; }
 };
 
-export const parseRecipeFromImage = async (base64Image: string): Promise<Recipe | null> => {
+export const organizePastedText = async (text: string): Promise<{ name: string; category: string; quantity: string }[]> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: `Extract food items from: "${text}". JSON: { "items": [{ "name", "category", "quantity" }] }.`,
+      config: { 
+        thinkingConfig: { thinkingBudget: 0 },
+        responseMimeType: 'application/json' 
+      }
+    });
+    const data = JSON.parse(cleanJsonString(response.text || "{}"));
+    return data.items || [];
+  } catch (error) { return []; }
+};
+
+export const generateWeeklyPlan = async (pantryItems: Ingredient[], preferences: UserPreferences, startDate: string): Promise<any[]> => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-pro-preview',
+      contents: `Generate a 7-day precise meal plan from ${startDate}. Use Inventory: ${pantryItems.map(i => i.name).join(', ')}. JSON: [{ "date", "dayName", "recipeTitle", "mealType", "calories" }]`,
+      config: { 
+        thinkingConfig: { thinkingBudget: 1500 },
+        responseMimeType: "application/json" 
+      }
+    });
+    return JSON.parse(cleanJsonString(response.text || "[]"));
+  } catch (error) { return []; }
+};
+
+export const estimateMealCalories = async (mealDescription: string): Promise<number> => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     try {
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',
-            contents: {
-                parts: [
-                    { inlineData: { data: base64Image, mimeType: 'image/jpeg' } },
-                    { text: 'Extract technical recipe from this image. Return standard JSON format. Ensure no geometric/scifi concepts.' }
-                ]
-            },
-            config: { responseMimeType: 'application/json' }
+            contents: `Estimate calories: "${mealDescription}". JSON: { "calories": number }.`,
+            config: { responseMimeType: "application/json" }
         });
         const data = JSON.parse(cleanJsonString(response.text || "{}"));
-        if (!data || !data.title) return null;
-        return {
-            id: Date.now().toString(),
-            title: data.title,
-            description: data.description || '',
-            timeMinutes: data.timeMinutes || 30,
-            difficulty: data.difficulty || 'Medium',
-            ingredients: data.ingredients || [],
-            instructions: data.instructions || [],
-            missingIngredients: [],
-            matchScore: 100,
-            calories: data.calories || 450,
-            protein: data.protein || '20g',
-            isUserCreated: true
-        };
-    } catch (error) { return null; }
+        return data.calories || 450;
+    } catch (error) { return 450; }
 };
 
-export const chatWithChef = async (messages: ChatMessage[], userInput: string, pantryItems: Ingredient[], activeRecipe?: Recipe | null): Promise<string> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const history = messages.map(m => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.text }] }));
-  try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: [...history, { role: 'user', parts: [{ text: userInput }] }],
-      config: { 
-        systemInstruction: "You are the Prepzu Master Chef. Provide precise, actionable advice based strictly on home cooking reality. ABSOLUTELY NO molecular gastronomy, futuristic talk, or geometric/cube food shapes. Act like a real chef in a real kitchen."
-      }
-    });
-    return response.text || "";
-  } catch (error) { return "Chef unavailable."; }
-};
-
-export const generateShoppingSuggestions = async (pantryItems: Ingredient[], historyTitles: string[]): Promise<{ name: string }[]> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const sanitizedPantry = pantryItems.map(i => i.name).join(', ');
-  try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: `Based on pantry [${sanitizedPantry}] and recent meals [${historyTitles.join(', ')}], suggest 5 buy items for real home cooking. JSON [{name: string}].`,
-      config: { responseMimeType: "application/json" }
-    });
-    return JSON.parse(cleanJsonString(response.text || "[]"));
-  } catch (error) { return []; }
-};
-
-export const generateWeeklyPlan = async (pantryItems: Ingredient[], preferences: UserPreferences, startDate: string): Promise<{ date: string; mealType: string; recipeTitle: string; calories: number }[]> => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  const sanitizedPantry = pantryItems.map(i => `${i.name} (${i.quantity})`).join(', ');
-  try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
-      contents: `7-day meal plan from ${startDate}. Inventory: [${sanitizedPantry}]. JSON: [{date, mealType, recipeTitle, calories}]. Use realistic home recipes only. No cubes or futuristic food.`,
-      config: { responseMimeType: "application/json" }
-    });
-    return JSON.parse(cleanJsonString(response.text || "[]"));
-  } catch (error) { return []; }
+export const generateKosherWeeklyPlan = async (
+    pantryItems: Ingredient[], 
+    preferences: UserPreferences, 
+    startDate: string, 
+    config: any
+): Promise<{ plan: any[], shoppingList: string[] }> => {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-3-pro-preview',
+            contents: `7-day plan from ${startDate}. Scale for ${config.servings} people. Inventory: ${pantryItems.map(i => i.name).join(', ')}. JSON: { "plan": [{ "date", "recipeTitle", "description", "calories", "ingredients" }], "shoppingList": ["items"] }.`,
+            config: { 
+                responseMimeType: "application/json",
+                thinkingConfig: { thinkingBudget: 2500 }
+            }
+        });
+        return JSON.parse(cleanJsonString(response.text || '{"plan": [], "shoppingList": []}'));
+    } catch (error) { return { plan: [], shoppingList: [] }; }
 };

@@ -1,245 +1,217 @@
 
-import React, { useState, useEffect } from 'react';
-import { ArrowRight, Sparkles, Mail, Lock, Eye, EyeOff, X, Gift, Check, CheckCircle2, Users, AlertCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { Mail, Lock, X, AlertCircle, Loader2, Sparkles, User, Eye, EyeOff, Utensils, Flame, Package, Carrot, ChefHat, Info, Beef, Coffee, Salad } from 'lucide-react';
 import { Logo } from './Logo';
 
 interface SignInViewProps {
-  onSignIn: (name: string, email: string, startTrial?: boolean) => void;
+  onSignIn: (name: string, email: string, options: { startTrial?: boolean, goal?: string, plan?: string }) => void;
   onClose: () => void;
   isModal?: boolean;
   initialMode?: 'login' | 'signup';
 }
 
 const SignInView: React.FC<SignInViewProps> = ({ onSignIn, onClose, isModal = false, initialMode = 'login' }) => {
-  const [isLogin, setIsLogin] = useState(initialMode === 'login'); 
-  const [email, setEmail] = useState(() => localStorage.getItem('ks_last_email') || '');
+  const [isLogin, setIsLogin] = useState(initialMode === 'login');
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  useEffect(() => {
-    const lastEmail = localStorage.getItem('ks_last_email');
-    if (lastEmail && !email) {
-      setEmail(lastEmail);
-    }
-  }, []);
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleAuth = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!email || !password) {
+        setError('All fields are mandatory for studio access.');
+        return;
+    }
     setError('');
+    setIsProcessing(true);
 
-    const normalizedEmail = email.toLowerCase().trim();
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (!normalizedEmail || !password.trim()) {
-        setError('Please fill in all fields.');
-        return;
-    }
-
-    if (!emailRegex.test(normalizedEmail)) {
-        setError('Please enter a valid email address.');
-        return;
-    }
-
-    if (password.length < 8) {
-        setError('Password must be at least 8 characters long.');
-        return;
-    }
-
-    const usersData = localStorage.getItem('savor_studio_users');
-    const users = usersData ? JSON.parse(usersData) : {};
-
-    if (isLogin) {
-        const user = users[normalizedEmail];
-        if (!user) {
-            setError('Account not found. Please sign up.');
-            return;
-        }
-        if (user.password !== password) {
-            setError('Incorrect password.');
-            return;
-        }
-        localStorage.setItem('ks_last_email', normalizedEmail);
-        onSignIn(user.name || normalizedEmail.split('@')[0], normalizedEmail);
-    } else {
-        if (users[normalizedEmail]) {
-            setError('Account already exists. Try signing in.');
-            return;
-        }
-        
-        const newUser = {
-            name: normalizedEmail.split('@')[0],
-            password: password,
-            email: normalizedEmail,
-            createdAt: new Date().toISOString()
-        };
-        
-        users[normalizedEmail] = newUser;
-        localStorage.setItem('savor_studio_users', JSON.stringify(users));
-        localStorage.setItem('ks_last_email', normalizedEmail);
-        onSignIn(newUser.name, normalizedEmail, true);
-    }
+    // Simulate authentication cycle
+    setTimeout(() => {
+        onSignIn(name || email.split('@')[0], email, { 
+            startTrial: !isLogin, 
+            goal: 'chef'
+        });
+        setIsProcessing(false);
+    }, 800);
   };
 
-  const containerClasses = isModal 
-    ? "w-full bg-white dark:bg-slate-900 rounded-[2.5rem] md:rounded-[3rem] shadow-2xl p-6 md:p-12 relative overflow-hidden border border-slate-100 dark:border-slate-800"
-    : "max-w-2xl w-full bg-white dark:bg-slate-900 rounded-[2.5rem] md:rounded-[3rem] shadow-2xl p-6 md:p-12 relative overflow-hidden animate-fade-in border border-slate-100 dark:border-slate-800";
-
   return (
-    <div className={!isModal ? "min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-4 transition-colors duration-500" : ""}>
-      <div className={containerClasses}>
-        {isModal && (
-          <button 
-            onClick={onClose} 
-            className="absolute top-6 right-6 p-2 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors z-20"
-          >
-            <X size={24} />
-          </button>
-        )}
+    <div className={`fixed inset-0 z-[200] flex items-center justify-center ${!isModal ? 'bg-[#0a0a0c]' : 'bg-black/70 backdrop-blur-md'} p-4 md:p-8 animate-fade-in font-sans`}>
+      <div className="w-full max-w-7xl h-full max-h-[820px] bg-white rounded-[3rem] shadow-[0_40px_80px_-15px_rgba(0,0,0,0.6)] relative overflow-hidden flex border-[4px] border-slate-950 flex-col md:flex-row">
         
-        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary-100 dark:bg-primary-900/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 opacity-60 pointer-events-none"></div>
+        {/* LEFT SIDE: STUDIO BRANDING (DEEP SLATE/CHARCOAL) */}
+        <div className="hidden md:flex md:w-[42%] bg-[#0f172a] relative overflow-hidden flex-col items-center justify-center p-16 text-white border-r-[4px] border-slate-950">
+            {/* Dynamic Background Elements */}
+            <div className="absolute inset-0 opacity-10" style={{ 
+                backgroundImage: 'linear-gradient(45deg, #b08d6a 12%, transparent 12%, transparent 50%, #b08d6a 50%, #b08d6a 62%, transparent 62%, transparent 100%)', 
+                backgroundSize: '100px 100px' 
+            }}></div>
+            
+            {/* Floating Props */}
+            <div className="absolute top-14 left-14 p-4 bg-white rounded-[1.5rem] border-[3px] border-slate-950 shadow-[8px_8px_0px_0px_rgba(176,141,106,1)] -rotate-12 transition-transform hover:rotate-0">
+                <ChefHat size={32} className="text-slate-950" />
+            </div>
+            <div className="absolute top-40 right-14 p-3 bg-[#b08d6a] rounded-2xl border-[3px] border-slate-950 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] rotate-12">
+                <Salad size={26} className="text-white" />
+            </div>
+            <div className="absolute bottom-48 left-16 p-3 bg-white rounded-2xl border-[3px] border-slate-950 shadow-[6px_6px_0px_0px_rgba(176,141,106,1)] rotate-6">
+                <Beef size={26} className="text-slate-950" />
+            </div>
+            <div className="absolute bottom-14 right-16 p-4 bg-[#f97316] rounded-full border-[3px] border-slate-950 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] -rotate-6">
+                <Flame size={32} className="text-white" fill="currentColor" />
+            </div>
 
-        <div className="relative z-10 flex flex-col lg:flex-row gap-8 lg:items-start">
-          
-          {/* Left Column: Value Reinforcement (Only on Signup) */}
-          {!isLogin && (
-            <div className="lg:w-1/2 space-y-4 md:space-y-6 animate-fade-in">
-                <div className="p-2 bg-primary-500 w-fit rounded-xl text-white shadow-xl shadow-primary-500/20 mb-2 md:mb-4">
-                    <Logo className="w-8 h-8" />
-                </div>
-                <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white font-serif tracking-tighter leading-tight">
-                    Start Your <br/><span className="text-primary-600">3-Day Pro Trial</span>
-                </h1>
-                
-                <ul className="space-y-3 md:space-y-4">
-                    <li className="flex items-start gap-3">
-                        <div className="mt-0.5 p-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 rounded-md">
-                            <CheckCircle2 size={14} />
-                        </div>
-                        <div>
-                            <p className="font-black text-slate-900 dark:text-white text-[10px] uppercase tracking-widest leading-none mb-1">Unlimited Tracking</p>
-                            <p className="text-[10px] text-slate-500 font-medium">No limits on your catalog.</p>
-                        </div>
-                    </li>
-                    <li className="flex items-start gap-3">
-                        <div className="mt-0.5 p-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 rounded-md">
-                            <CheckCircle2 size={14} />
-                        </div>
-                        <div>
-                            <p className="font-black text-slate-900 dark:text-white text-[10px] uppercase tracking-widest leading-none mb-1">Smart Lists</p>
-                            <p className="text-[10px] text-slate-500 font-medium">One-click store exports.</p>
-                        </div>
-                    </li>
-                    <li className="flex items-start gap-3">
-                        <div className="mt-0.5 p-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 rounded-md">
-                            <CheckCircle2 size={14} />
-                        </div>
-                        <div>
-                            <p className="font-black text-slate-900 dark:text-white text-[10px] uppercase tracking-widest leading-none mb-1">Studio Planning</p>
-                            <p className="text-[10px] text-slate-500 font-medium">AI curated custom menus.</p>
-                        </div>
-                    </li>
-                </ul>
-
-                <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2">
-                    <div className="flex -space-x-2">
-                        {[1,2,3].map(i => (
-                            <div key={i} className="w-6 h-6 rounded-full border border-white dark:border-slate-900 bg-slate-200 dark:bg-slate-700 overflow-hidden flex items-center justify-center text-[8px] font-black">
-                                <Users size={10}/>
-                            </div>
-                        ))}
+            {/* Content Hub */}
+            <div className="relative z-10 text-center space-y-12 max-w-sm">
+                <div className="flex flex-col items-center gap-6">
+                    <div className="p-5 bg-white rounded-[2rem] text-slate-950 border-[4px] border-[#b08d6a] shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]">
+                        <Logo className="w-16 h-16" />
                     </div>
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Join 5,000+ chefs</p>
+                    <span className="text-6xl font-black tracking-tighter uppercase italic">Prepzu</span>
+                </div>
+                
+                <div className="space-y-6">
+                    <h2 className="text-5xl font-black leading-[0.95] tracking-tight">
+                        Kitchen <br/> <span className="text-[#b08d6a]">Symphony.</span>
+                    </h2>
+                    <p className="text-lg font-bold text-slate-400 leading-relaxed">
+                        The world's most advanced <span className="text-white">Culinary OS</span> for precision pantry management.
+                    </p>
+                </div>
+
+                {/* Integration Stats */}
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white/5 backdrop-blur-sm border-[3px] border-white/10 p-5 rounded-3xl">
+                        <p className="text-3xl font-black text-[#b08d6a]">24/7</p>
+                        <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">AI Support</p>
+                    </div>
+                    <div className="bg-white/5 backdrop-blur-sm border-[3px] border-white/10 p-5 rounded-3xl">
+                        <p className="text-3xl font-black text-[#b08d6a]">100%</p>
+                        <p className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500">Waste-Free</p>
+                    </div>
                 </div>
             </div>
-          )}
+        </div>
 
-          {/* Right Column: Form */}
-          <div className={!isLogin ? "lg:w-1/2 w-full" : "w-full max-w-md mx-auto"}>
-            {isLogin && (
-                <div className="text-center mb-6">
-                    <div className="mb-4 transform hover:scale-105 transition-transform duration-500 inline-block">
-                        <Logo className="w-12 h-12 text-primary-600" />
+        {/* RIGHT SIDE: AUTH FORM (CLEAN WHITE GRID) */}
+        <div className="flex-1 bg-white relative flex flex-col p-8 md:p-20 overflow-y-auto" style={{ 
+            backgroundImage: 'radial-gradient(#e2e8f0 1.5px, transparent 1.5px)', 
+            backgroundSize: '30px 30px' 
+        }}>
+            {/* Close Hub */}
+            <button 
+              onClick={onClose} 
+              className="absolute top-10 right-10 p-3 text-slate-400 hover:text-slate-950 hover:bg-slate-50 rounded-2xl transition-all z-20 border-[3px] border-transparent hover:border-slate-950"
+            >
+              <X size={28} />
+            </button>
+
+            <div className="max-w-md w-full mx-auto space-y-12 relative z-10 my-auto">
+                <div className="space-y-4">
+                    <h1 className="text-5xl font-black text-slate-950 tracking-tighter leading-none">
+                        {isLogin ? "Welcome" : "New Studio"}
+                    </h1>
+                    <p className="text-slate-500 font-bold text-lg">
+                        {isLogin ? "Authenticate to resume your session." : "Register your kitchen manifest today."}
+                    </p>
+                </div>
+
+                <form onSubmit={handleAuth} className="space-y-6">
+                    {!isLogin && (
+                        <div className="space-y-2">
+                            <label className="text-[11px] font-black uppercase text-slate-950 tracking-[0.2em] ml-2">Display Name</label>
+                            <div className="relative group">
+                                <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none text-slate-300 group-focus-within:text-[#b08d6a] transition-colors">
+                                    <User size={22} />
+                                </div>
+                                <input 
+                                    type="text" value={name} onChange={e => setName(e.target.value)}
+                                    placeholder="Chef Gordon" 
+                                    className="w-full bg-white border-[3.5px] border-slate-950 p-6 pl-16 rounded-2xl outline-none font-black text-slate-950 placeholder:text-slate-300 transition-all focus:shadow-[8px_8px_0px_0px_rgba(176,141,106,0.3)] focus:-translate-y-1" 
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="space-y-2">
+                        <label className="text-[11px] font-black uppercase text-slate-950 tracking-[0.2em] ml-2">Studio Email</label>
+                        <div className="relative group">
+                            <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none text-slate-300 group-focus-within:text-[#b08d6a] transition-colors">
+                                <Mail size={22} />
+                            </div>
+                            <input 
+                                type="email" value={email} onChange={e => setEmail(e.target.value)} required 
+                                placeholder="name@studio.com" 
+                                className="w-full bg-white border-[3.5px] border-slate-950 p-6 pl-16 rounded-2xl outline-none font-black text-slate-950 placeholder:text-slate-300 transition-all focus:shadow-[8px_8px_0px_0px_rgba(176,141,106,0.3)] focus:-translate-y-1" 
+                            />
+                        </div>
                     </div>
-                    <h1 className="text-3xl font-black text-slate-900 dark:text-white mb-1 font-serif tracking-tight">Welcome Back</h1>
-                    <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Continue your journey.</p>
-                </div>
-            )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="relative group">
-                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary-600 transition-colors" size={18} />
-                    <input
-                        type="email"
-                        name="email"
-                        autoComplete="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="Email Address"
-                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-4 pl-12 pr-4 text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all font-bold text-sm"
-                    />
-                </div>
+                    <div className="space-y-2">
+                        <label className="text-[11px] font-black uppercase text-slate-950 tracking-[0.2em] ml-2">Access Key</label>
+                        <div className="relative group">
+                            <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none text-slate-300 group-focus-within:text-[#b08d6a] transition-colors">
+                                <Lock size={22} />
+                            </div>
+                            <input 
+                                type={showPassword ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} required 
+                                placeholder="••••••••" 
+                                className="w-full bg-white border-[3.5px] border-slate-950 p-6 pl-16 pr-16 rounded-2xl outline-none font-black text-slate-950 placeholder:text-slate-300 transition-all focus:shadow-[8px_8px_0px_0px_rgba(176,141,106,0.3)] focus:-translate-y-1" 
+                            />
+                            <button 
+                                type="button" 
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute inset-y-0 right-0 pr-6 flex items-center text-slate-300 hover:text-slate-950 transition-colors"
+                            >
+                                {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
+                            </button>
+                        </div>
+                    </div>
 
-                <div className="relative group">
-                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-primary-600 transition-colors" size={18} />
-                    <input
-                        type={showPassword ? "text" : "password"}
-                        name="password"
-                        autoComplete={isLogin ? "current-password" : "new-password"}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Password (min. 8 chars)"
-                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-4 pl-12 pr-12 text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all font-bold text-sm"
-                    />
+                    {error && (
+                        <div className="p-5 bg-rose-50 border-[3px] border-rose-500 rounded-2xl text-[11px] font-black uppercase text-rose-600 flex items-center gap-4 animate-shake">
+                            <AlertCircle size={20}/> {error}
+                        </div>
+                    )}
+
                     <button 
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary-600 transition-colors"
+                        type="submit" disabled={isProcessing}
+                        className="w-full py-8 bg-[#b08d6a] border-[4px] border-slate-950 rounded-[2rem] font-black text-white text-xl uppercase tracking-[0.4em] shadow-[0px_10px_0px_0px_rgba(0,0,0,1)] hover:shadow-none hover:translate-y-2 transition-all flex items-center justify-center gap-4 disabled:opacity-50 active:scale-95"
                     >
-                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                        {isProcessing ? <Loader2 className="animate-spin" /> : (isLogin ? "Launch App" : "Initialize Account")} 
+                    </button>
+                </form>
+
+                {/* Offer Hub */}
+                {!isLogin && (
+                    <div className="bg-[#fefce8] border-[3.5px] border-slate-950 p-8 rounded-[2rem] shadow-[10px_10px_0px_0px_rgba(176,141,106,0.5)] flex gap-6">
+                        <Sparkles size={36} className="text-[#b08d6a] shrink-0" />
+                        <div>
+                            <p className="text-sm font-black text-slate-950 uppercase tracking-tight">Studio Premium Trial</p>
+                            <p className="text-[13px] font-bold text-slate-600 mt-1 leading-relaxed">
+                               Complete access for <span className="text-slate-950 font-black decoration-[2px] underline">3 days</span>. 
+                               No financial commitment required to start.
+                            </p>
+                        </div>
+                    </div>
+                )}
+
+                <div className="pt-6 text-center">
+                    <button onClick={() => { setIsLogin(!isLogin); setError(''); }} className="text-base font-bold text-slate-500 hover:text-slate-950 transition-colors">
+                        {isLogin ? "No studio access? " : "Already established? "}
+                        <span className="text-[#b08d6a] font-black underline underline-offset-8 decoration-[3.5px]">{isLogin ? "Join Now" : "Sign In"}</span>
                     </button>
                 </div>
-
-                {!isLogin && (
-                    <div className="p-3 bg-primary-50 dark:bg-primary-900/10 rounded-xl border border-primary-100 dark:border-primary-800 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <Gift className="text-primary-500" size={16} />
-                            <div>
-                                <p className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-widest">Instant Access</p>
-                                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-tight">No credit card required</p>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {error && (
-                    <div className="flex items-center gap-2 bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 text-xs font-bold p-3 rounded-xl border border-rose-100 dark:border-rose-900/50 animate-shake">
-                        <AlertCircle className="shrink-0" size={14} />
-                        {error}
-                    </div>
-                )}
-
-                <button
-                  type="submit"
-                  className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 py-4 rounded-[1.5rem] font-black text-base shadow-xl shadow-slate-900/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 uppercase tracking-widest mt-4"
-                >
-                  <span>{isLogin ? 'Enter' : 'Activate Trial'}</span>
-                  <ArrowRight size={18} />
-                </button>
-            </form>
-
-            <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-800 w-full text-center">
-                 <p className="text-slate-500 dark:text-slate-400 text-[11px] font-bold">
-                     {isLogin ? "New here?" : "Already member?"}
-                     <button 
-                          onClick={() => { setIsLogin(!isLogin); setError(''); }}
-                          className="ml-2 font-black text-primary-600 hover:text-primary-700 transition-colors uppercase tracking-widest text-[10px]"
-                     >
-                         {isLogin ? "Trial Offer" : "Sign In"}
-                     </button>
-                 </p>
             </div>
-          </div>
+
+            {/* Hub Footer */}
+            <div className="mt-auto pt-16 flex justify-center items-center gap-4 opacity-40">
+                <Logo className="w-8 h-8 grayscale" />
+                <span className="font-black text-[11px] uppercase tracking-[0.6em]">Prepzu Intelligence v2.5</span>
+            </div>
         </div>
       </div>
     </div>

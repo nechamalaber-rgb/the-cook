@@ -79,7 +79,7 @@ const LandingView: React.FC<LandingViewProps> = ({ onStart, onSignIn, onSignOut,
           <div className="flex items-center gap-2 md:gap-4">
               {!currentUser ? (
                   <button onClick={onSignIn} className="px-4 md:px-6 py-2 md:py-2.5 bg-primary-500 text-white rounded-xl font-black text-[9px] md:text-[10px] uppercase tracking-[0.1em] md:tracking-[0.2em] shadow-lg shadow-primary-500/20 flex items-center gap-1.5 md:gap-2 hover:scale-105 active:scale-95 transition-all whitespace-nowrap">
-                    <span className="hidden sm:inline">Start</span> 3-Day <span className="hidden sm:inline">Free</span> Trial
+                    Sign Up by the Studio
                   </button>
               ) : (
                   <div className="flex items-center gap-2 md:gap-3">
@@ -218,7 +218,7 @@ const LandingView: React.FC<LandingViewProps> = ({ onStart, onSignIn, onSignOut,
                           ))}
                         </ul>
                     </div>
-                    <button onClick={onSignIn} className="w-full py-5 bg-white/10 border border-white/10 text-white rounded-full font-black uppercase tracking-widest text-[11px] hover:bg-white hover:text-black transition-all flex items-center justify-center gap-3">Start Pro <ArrowRight size={16}/></button>
+                    <button onClick={onSignIn} className="w-full py-5 bg-white/10 border border-white/10 text-white rounded-full font-black uppercase tracking-widest text-[11px] hover:bg-white hover:text-black transition-all flex items-center justify-center gap-3">Register by the Studio <ArrowRight size={16}/></button>
                   </div>
 
                   {/* Yearly Card */}
@@ -245,7 +245,7 @@ const LandingView: React.FC<LandingViewProps> = ({ onStart, onSignIn, onSignOut,
                         </ul>
                     </div>
 
-                    <button onClick={onSignIn} className="w-full py-6 bg-white text-black rounded-full font-black uppercase tracking-[0.3em] text-xs hover:bg-slate-200 transition-all flex items-center justify-center gap-3 shadow-2xl group-hover:scale-[1.02]">Claim Studio Offer <ChevronRight size={18}/></button>
+                    <button onClick={onSignIn} className="w-full py-6 bg-white text-black rounded-full font-black uppercase tracking-[0.3em] text-xs hover:bg-slate-200 transition-all flex items-center justify-center gap-3 shadow-2xl group-hover:scale-[1.02]">Sign Up by the Studio <ChevronRight size={18}/></button>
                   </div>
 
                </div>

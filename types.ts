@@ -1,3 +1,4 @@
+
 export enum Category {
   PRODUCE = 'Produce',
   DAIRY = 'Dairy & Eggs',
@@ -9,6 +10,15 @@ export enum Category {
   OTHER = 'Other'
 }
 
+export interface Review {
+  id: string;
+  userName: string;
+  rating: number;
+  comment: string;
+  timestamp: string;
+  isExpert?: boolean;
+}
+
 export interface Ingredient {
   id: string;
   name: string;
@@ -16,6 +26,7 @@ export interface Ingredient {
   quantity: string;
   expiryDate?: string; 
   addedDate: string;
+  imageUrl?: string;
 }
 
 export interface Pantry {
@@ -35,10 +46,16 @@ export interface Recipe {
   missingIngredients: string[];
   calories?: number;
   protein?: string; 
+  carbs?: string;
+  fat?: string;
   matchScore: number; 
   imageUrl?: string;
   isUserCreated?: boolean; 
   tips?: string[];
+  servings?: number;
+  mealType?: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack' | 'Dessert' | 'Fitness Fuel';
+  reviews?: Review[];
+  isFitnessMatch?: boolean;
 }
 
 export interface ShoppingItem {
@@ -52,18 +69,11 @@ export interface MealLog {
   id: string;
   date: string; 
   time: string; 
-  mealType: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack' | 'Dessert';
+  mealType: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack' | 'Dessert' | 'Fitness Fuel';
   recipeTitle: string;
   recipeId: string;
   calories?: number;
   status?: 'planned' | 'completed';
-}
-
-export interface PendingInvite {
-  email: string;
-  code: string;
-  senderEmail: string;
-  timestamp: string;
 }
 
 export interface UserPreferences {
@@ -96,17 +106,16 @@ export interface UserPreferences {
   householdSize: number;
   chefPersonality: 'Strict' | 'Creative';
   generationsCount?: number;
-  
-  referralCode?: string;
-  linkedCode?: string;
-  familyId?: string;
-  activeVerificationCodes?: PendingInvite[];
-  referralRewardsApplied?: number;
+  selectedGoal?: 'fitness' | 'waste' | 'chef';
+  twoFactorEnabled?: boolean;
+  betaReasoningEnabled?: boolean;
+  onboardingCompleted?: boolean;
+  activeWalkthroughStep?: number;
 }
 
 export interface RecipeGenerationOptions {
   servings: number;
-  mealType: 'Any' | 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack' | 'Dessert';
+  mealType: 'Any' | 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack' | 'Dessert' | 'Fitness Fuel';
   maxTime: string;
   excludeRecents?: string[]; 
   customRequest?: string; 
@@ -120,9 +129,4 @@ export interface ChatMessage {
   role: 'user' | 'model';
   text: string;
   timestamp: Date;
-}
-
-export interface GroundedSource {
-    uri: string;
-    title: string;
 }

@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { X, Sparkles, Mail, Apple, Globe, Zap } from 'lucide-react';
+import { X, Sparkles, Mail, Apple, Globe, Zap, CreditCard, ShieldCheck } from 'lucide-react';
 import { Logo } from './Logo';
 
 interface TrialUpsellPopupProps {
@@ -46,7 +46,7 @@ const TrialUpsellPopup: React.FC<TrialUpsellPopupProps> = ({ onClose, onClaim })
           </button>
 
           <h4 className="text-white font-black text-[13px] uppercase tracking-[0.4em] mb-10 drop-shadow-sm">
-            Limited Time Offer
+            Exclusive Studio Offer
           </h4>
 
           {/* TICKET VISUAL */}
@@ -61,14 +61,14 @@ const TrialUpsellPopup: React.FC<TrialUpsellPopupProps> = ({ onClose, onClaim })
                     <h2 className="text-5xl md:text-6xl font-black text-black leading-none mb-1 tracking-tighter">
                         FREE
                     </h2>
-                    <p className="text-black/70 font-black text-[11px] uppercase tracking-[0.2em]">3 DAY STUDIO TRIAL</p>
+                    <p className="text-black/70 font-black text-[11px] uppercase tracking-[0.2em]">ACCESS THE STUDIO</p>
                 </div>
 
                 <div className="w-28 bg-white flex flex-col items-center justify-center">
                     <div className="p-2.5 bg-primary-600 rounded-xl text-white shadow-lg mb-2">
                         <Logo className="w-8 h-8" />
                     </div>
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center leading-none">STUDIO<br/>PRO</span>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center leading-none">STUDIO<br/>ELITE</span>
                 </div>
              </div>
           </div>
@@ -94,47 +94,39 @@ const TrialUpsellPopup: React.FC<TrialUpsellPopupProps> = ({ onClose, onClaim })
 
           {/* SIMULATED INPUT & ACTIONS */}
           <div className="w-full space-y-4">
-              <div className="text-left w-full">
-                  <label className="text-[10px] font-black text-white/50 uppercase tracking-widest ml-1 mb-2 block">Your Email</label>
-                  <div className="bg-[#1d4ed8] border border-white/10 rounded-2xl p-5 flex items-center gap-3">
-                      <Mail size={18} className="text-white/40" />
-                      <input 
-                        readOnly
-                        className="bg-transparent outline-none text-white font-bold w-full placeholder:text-white/20 text-sm" 
-                        placeholder="chef@prepzu.studio" 
-                      />
-                  </div>
-              </div>
-
               <button 
                 onClick={onClaim}
                 className="w-full py-6 bg-white text-[#2563eb] rounded-2xl font-black text-sm uppercase tracking-[0.3em] shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all"
               >
-                Continue to Studio
+                Sign Up by the Studio
               </button>
+              
+              <div className="flex flex-col gap-2 pt-2">
+                  <div className="flex items-center justify-center gap-2 text-[10px] font-black text-white/60 uppercase tracking-widest">
+                      <Zap size={14} className="text-yellow-400" /> Bills $30.00/yr starting Day 3
+                  </div>
+                  <div className="flex items-center justify-center gap-2 text-[9px] font-bold text-white/40 uppercase tracking-[0.2em]">
+                      Cancel anytime in settings • No charge today
+                  </div>
+              </div>
 
               <div className="flex items-center gap-4 py-4">
                   <div className="h-px bg-white/10 flex-1"></div>
-                  <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.4em]">OR SIGN IN WITH</span>
+                  <span className="text-[9px] font-black text-white/20 uppercase tracking-[0.4em]">VERIFIED BY</span>
                   <div className="h-px bg-white/10 flex-1"></div>
               </div>
 
-              <div className="flex gap-4 justify-center">
-                  <button className="flex-1 py-5 bg-white/10 rounded-2xl flex items-center justify-center hover:bg-white/20 transition-all border border-white/5">
-                      <Globe size={22} className="text-white" />
-                  </button>
-                  <button className="flex-1 py-5 bg-white/10 rounded-2xl flex items-center justify-center hover:bg-white/20 transition-all border border-white/5">
-                      <Apple size={22} className="text-white" fill="currentColor" />
-                  </button>
-                  <button className="flex-1 py-5 bg-white/10 rounded-2xl flex items-center justify-center hover:bg-white/20 transition-all border border-white/5">
-                      <Zap size={22} className="text-white" fill="currentColor" />
-                  </button>
+              <div className="flex gap-10 justify-center opacity-40 grayscale group-hover:grayscale-0 transition-all">
+                  <div className="flex items-center gap-2 text-white">
+                      <ShieldCheck size={20} />
+                      <span className="text-[10px] font-black uppercase tracking-widest">Stripe</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-white">
+                      <CreditCard size={20} />
+                      <span className="text-[10px] font-black uppercase tracking-widest">PCI Secure</span>
+                  </div>
               </div>
           </div>
-
-          <p className="mt-10 text-[9px] font-black text-white/20 uppercase tracking-[0.4em]">
-              Instant access • No payment required to start
-          </p>
 
         </div>
       </div>
