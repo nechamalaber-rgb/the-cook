@@ -51,9 +51,9 @@ const DEFAULT_INITIAL_ITEMS: Ingredient[] = [
 const DEFAULT_PREFS: UserPreferences = {
   darkMode: true, 
   themeColor: 'classic',
-  isProMember: true, 
-  subscriptionTier: 'pro',
-  trialUsed: true,
+  isProMember: false, 
+  subscriptionTier: 'none',
+  trialUsed: false,
   dailyUsage: { date: new Date().toISOString().split('T')[0], count: 0 },
   dietaryRestrictions: [],
   cuisinePreferences: ['American', 'Healthy'],
@@ -122,7 +122,8 @@ const App: React.FC = () => {
     const initialPantries = safeParse(`${prefix}pantries`, [{ id: 'default', name: 'Main Kitchen', items: DEFAULT_INITIAL_ITEMS }]);
     setPantries(initialPantries);
     const loadedPrefs = safeParse(`${prefix}prefs`, DEFAULT_PREFS);
-    setPreferences({ ...DEFAULT_PREFS, ...loadedPrefs, darkMode: true, isProMember: true, subscriptionTier: 'pro' });
+    // Remove forcing pro member state so "Go Pro" button can show
+    setPreferences({ ...DEFAULT_PREFS, ...loadedPrefs, darkMode: true });
     setShoppingList(safeParse(`${prefix}shopping`, []));
     setOrderHistory(safeParse(`${prefix}orders`, []));
     setSavedRecipes(safeParse(`${prefix}recipes`, []));
@@ -139,7 +140,7 @@ const App: React.FC = () => {
         localStorage.setItem(`${prefix}orders`, JSON.stringify(orderHistory));
         localStorage.setItem(`${prefix}recipes`, JSON.stringify(savedRecipes));
         localStorage.setItem(`${prefix}history`, JSON.stringify(mealHistory));
-        localStorage.setItem(`${prefix}prefs`, JSON.stringify({ ...preferences, darkMode: true, isProMember: true, subscriptionTier: 'pro' }));
+        localStorage.setItem(`${prefix}prefs`, JSON.stringify({ ...preferences, darkMode: true }));
     } catch (e) { console.warn("Storage quota exceeded."); }
   }, [pantries, shoppingList, orderHistory, savedRecipes, mealHistory, preferences, currentUserEmail]);
 
@@ -250,10 +251,9 @@ const App: React.FC = () => {
   const handleGenerateRecipes = async (options: RecipeGenerationOptions) => {
     setIsGeneratingRecipes(true);
     setGeneratedRecipes([]); 
-    const targetCount = options.recipeCount || 4; // User requested 4 specific variations
+    const targetCount = options.recipeCount || 4; 
 
     try {
-      // SEQUENTIAL LOADING: Generate one by one to strictly follow the mission order (1-4)
       for (let i = 0; i < targetCount; i++) {
           try {
             const recipe = await generateSingleSmartRecipe(activePantry.items, preferences, {
@@ -269,7 +269,7 @@ const App: React.FC = () => {
           }
       }
     } catch (e) {
-      showToast("Critical synthesis failure", 'error');
+      showToast("Synthesis failure", 'error');
     } finally {
       setIsGeneratingRecipes(false);
     }
@@ -350,15 +350,21 @@ const App: React.FC = () => {
                 <span className="font-serif font-black text-xl text-white tracking-tighter leading-none hidden sm:inline">Prepzu</span>
               </div>
               <nav className="flex items-center gap-1 md:gap-2">
-                  <NavLink to="/pantry" id="nav-inventory" className={({isActive}) => `p-2.5 md:px-4 md:py-2 rounded-xl text-sm font-bold transition-all ${isActive ? 'text-primary-600 bg-slate-900/40 shadow-sm' : 'text-slate-400 hover:text-white'}`}><HomeIcon size={20} className="md:hidden" /><span className="hidden md:inline">Pantry</span></NavLink>
+                  <NavLink to="/pantry" id="nav-inventory" className={({isActive}) => `p-2.5 md:px-4 md:py-2 rounded-xl text-sm font-bold transition-all ${isActive ? 'text-primary-600 bg-slate-900/40 shadow-sm' : 'text-slate-400 hover:text-white'}`}><HomeIcon size={20} className="md:hidden" /><span className="hidden md:inline">Food List</span></NavLink>
                   <NavLink to="/studio" id="nav-studio" className={({isActive}) => `p-2.5 md:px-4 md:py-2 rounded-xl text-sm font-bold transition-all ${isActive ? 'text-primary-600 bg-slate-900/40 shadow-sm' : 'text-slate-400 hover:text-white'}`}><Sparkles size={20} className="md:hidden" /><span className="hidden md:inline">Recipes</span></NavLink>
-                  <NavLink to="/calendar" className={({isActive}) => `p-2.5 md:px-4 md:py-2 rounded-xl text-sm font-bold transition-all ${isActive ? 'text-primary-600 bg-slate-900/40 shadow-sm' : 'text-slate-400 hover:text-white'}`}><CalendarIcon size={20} className="md:hidden" /><span className="hidden md:inline">Calendar</span></NavLink>
+                  <NavLink to="/calendar" id="nav-calendar" className={({isActive}) => `p-2.5 md:px-4 md:py-2 rounded-xl text-sm font-bold transition-all ${isActive ? 'text-primary-600 bg-slate-900/40 shadow-sm' : 'text-slate-400 hover:text-white'}`}><CalendarIcon size={20} className="md:hidden" /><span className="hidden md:inline">Plan</span></NavLink>
                   <NavLink to="/shopping" id="nav-cart" className={({isActive}) => `p-2.5 md:px-4 md:py-2 rounded-xl text-sm font-bold transition-all ${isActive ? 'text-primary-600 bg-slate-900/40 shadow-sm' : 'text-slate-400 hover:text-white'}`}><ShoppingBag size={20} className="md:hidden" /><span className="hidden md:inline">Cart</span></NavLink>
-                  <NavLink to="/about" className={({isActive}) => `p-2.5 md:px-4 md:py-2 rounded-xl text-sm font-bold transition-all ${isActive ? 'text-primary-600 bg-slate-900/40 shadow-sm' : 'text-slate-400 hover:text-white'}`}><CreditCard size={20} className="md:hidden" /><span className="hidden md:inline">Plans</span></NavLink>
               </nav>
               <div id="main-header-auth-zone" className="flex items-center gap-2 md:gap-3 shrink-0">
+                  {/* PRO UPGRADE BUTTON - Only shows for non-pro members who are logged in */}
+                  {!preferences.isProMember && currentUserEmail && (
+                    <NavLink to="/about" id="nav-go-pro" className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-400 to-amber-600 text-black rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl hover:scale-105 active:scale-95 transition-all mr-2">
+                        <Crown size={14} /> Go Pro
+                    </NavLink>
+                  )}
+
                   {!currentUserEmail ? (
-                    <button onClick={() => { setAuthModalMode('signup'); setIsAuthModalOpen(true); }} className="flex items-center gap-2 px-5 py-2 bg-primary-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg hover:scale-105 transition-all whitespace-nowrap"><UserPlus size={14} /> Sign Up Free</button>
+                    <button id="nav-signup-btn" onClick={() => { setAuthModalMode('signup'); setIsAuthModalOpen(true); }} className="flex items-center gap-2 px-5 py-2 bg-primary-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg hover:scale-105 transition-all whitespace-nowrap"><UserPlus size={14} /> Sign Up Free</button>
                   ) : (
                     <>
                       <NavLink to="/about" className={({isActive}) => `p-2.5 rounded-xl transition-all ${isActive ? 'text-primary-600 bg-slate-900/40' : 'text-slate-400'}`} title="Plans"><HelpCircle size={20} /></NavLink>
@@ -380,7 +386,7 @@ const App: React.FC = () => {
                 <Route path="/plans" element={<Navigate to="/studio" replace />} />
             </Routes>
           </main>
-          <button onClick={() => setIsChatOpen(true)} className="fixed bottom-8 right-8 z-[100] p-4 bg-white text-slate-900 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all"><MessageSquarePlus size={28} /></button>
+          <button id="nav-chat-trigger" onClick={() => setIsChatOpen(true)} className="fixed bottom-8 right-8 z-[100] p-4 bg-white text-slate-900 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all"><MessageSquarePlus size={28} /></button>
           <ChefChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} pantryItems={activePantry.items} activeRecipe={activeRecipe} cartItems={shoppingList} lastOrder={orderHistory[0]} />
         </>
       )}
