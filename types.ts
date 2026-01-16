@@ -35,6 +35,15 @@ export interface Pantry {
     items: Ingredient[];
 }
 
+export interface PantryAudit {
+  efficiencyScore: number;
+  healthStatus: 'Excellent' | 'Stable' | 'Critical';
+  categoryDistribution: { category: string; percentage: number }[];
+  wasteRisks: string[];
+  missingLink: string;
+  chefAdvice: string;
+}
+
 export interface Recipe {
   id: string;
   title: string;
@@ -56,13 +65,29 @@ export interface Recipe {
   mealType?: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack' | 'Dessert' | 'Fitness Fuel';
   reviews?: Review[];
   isFitnessMatch?: boolean;
+  groundingLinks?: string[];
 }
 
 export interface ShoppingItem {
   id: string;
   name: string;
   category: Category;
+  quantity?: string;
+  price?: number;
   checked: boolean;
+  store?: string;
+  source?: string; // Tracks if item came from a specific recipe
+}
+
+export type OrderStatus = 'pending' | 'confirmed' | 'preparing' | 'ready' | 'completed' | 'cancelled';
+
+export interface Order {
+  id: string;
+  date: string;
+  total: number;
+  items: ShoppingItem[];
+  status: OrderStatus;
+  createdAt: string;
 }
 
 export interface MealLog {
@@ -111,6 +136,8 @@ export interface UserPreferences {
   betaReasoningEnabled?: boolean;
   onboardingCompleted?: boolean;
   activeWalkthroughStep?: number;
+  personalTasteBio: string; // The specific bio for AI to listen to
+  cookingStyle: 'simple' | 'culinary';
 }
 
 export interface RecipeGenerationOptions {

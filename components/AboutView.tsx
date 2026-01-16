@@ -1,123 +1,151 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  ScanLine, Sparkles, ArrowRight, ShieldCheck, Cpu, Eye, 
-  Info, AlertTriangle, BookOpen, Flame, Clock, Microscope, 
-  Settings, ChefHat, Database, Zap
+  ArrowRight, ShieldCheck, Zap, 
+  Crown, Flame, Sparkles, Check, 
+  Wallet, TrendingDown, Clock, 
+  ShoppingBag, Trash2
 } from 'lucide-react';
-import { Logo } from './Logo';
 
 const AboutView: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="animate-fade-in pb-24 max-w-5xl mx-auto px-4">
-      
-      {/* HEADER SECTION */}
-      <section className="text-center py-20 relative border-b border-slate-200 dark:border-slate-800 mb-16">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-primary-500/10 rounded-full blur-[100px] opacity-60 pointer-events-none"></div>
-        <div className="relative z-10">
-            <h1 className="text-5xl md:text-7xl font-black text-slate-900 dark:text-white mb-6 font-serif tracking-tighter leading-none">
-              Studio <span className="text-primary-500">Logic.</span>
-            </h1>
-            <p className="text-lg md:text-xl text-slate-500 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed font-medium">
-              Understanding the Studio Engine: How we orchestrate your culinary data and where our intelligence meets reality.
+    <div className="min-h-screen bg-[#090e1a] animate-fade-in pb-24">
+      <div className="max-w-6xl mx-auto px-6 pt-10">
+        
+        {/* HEADER SECTION */}
+        <section className="text-center py-20 relative">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[800px] h-[400px] bg-primary-500/10 rounded-full blur-[120px] pointer-events-none"></div>
+          <div className="relative z-10">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary-500/10 text-primary-400 rounded-full mb-8 border border-primary-500/20 backdrop-blur-md">
+                  <Sparkles size={16} className="animate-pulse" />
+                  <span className="text-[10px] font-black uppercase tracking-[0.3em]">Premium Orchestration</span>
+              </div>
+              <h1 className="text-6xl md:text-8xl font-black text-white mb-8 font-serif tracking-tighter leading-none italic">
+                Studio <span className="text-primary-500">Access.</span>
+              </h1>
+              <p className="text-xl md:text-2xl text-slate-400 max-w-3xl mx-auto leading-relaxed font-medium">
+                The average household wastes $1,500+ in groceries annually. Prepzu Studio Pro pays for itself by turning that waste into gourmet meals.
+              </p>
+          </div>
+        </section>
+
+        {/* PRICING CARD */}
+        <section className="max-w-2xl mx-auto mb-24 relative">
+             <div className="absolute -inset-1 bg-gradient-to-r from-primary-500 to-indigo-600 rounded-[4rem] blur opacity-20 group-hover:opacity-40 transition-opacity"></div>
+             <div className="relative bg-[#0c1220] p-10 md:p-16 rounded-[3.5rem] border-2 border-primary-500 shadow-2xl overflow-hidden group">
+                  <div className="absolute top-0 right-0 px-10 py-4 bg-primary-500 text-white rounded-bl-[2.5rem] text-[11px] font-black uppercase tracking-[0.2em] shadow-xl z-20">
+                      Studio Pro
+                  </div>
+                  
+                  <div className="mb-12">
+                      <div className="flex items-baseline gap-4 mb-2">
+                          <span className="text-8xl font-black font-serif text-white tracking-tighter">$17.99</span>
+                          <span className="text-slate-500 font-bold text-lg uppercase tracking-widest">/ Month</span>
+                      </div>
+                      <p className="text-primary-400 text-xs font-black uppercase tracking-widest flex items-center gap-2">
+                         <Flame size={16} fill="currentColor" className="animate-bounce" /> Total Savings Logic Enabled
+                      </p>
+                  </div>
+
+                  <div className="grid md:grid-cols-1 gap-6 mb-12">
+                      {[
+                        { title: "Unlimited AI Synthesis", desc: "No caps on recipe generation. Infinite culinary creativity." },
+                        { title: "Precision Vision OCR", desc: "Instant manifest population from receipts and shelves." },
+                        { title: "Complete Macro Analysis", desc: "Detailed tracking of calories, protein, and nutrients." },
+                        { title: "Auto-Supply Sync", desc: "Direct integration with Walmart & Instacart logistics." },
+                        { title: "Priority Logic Access", desc: "Use our most advanced thinking models first." }
+                      ].map((f, i) => (
+                          <div key={i} className="flex items-start gap-4">
+                              <div className="w-6 h-6 rounded-full bg-primary-500 flex items-center justify-center text-white shrink-0 shadow-lg shadow-primary-500/20 mt-1">
+                                  <Check size={14} strokeWidth={4} />
+                              </div>
+                              <div>
+                                <p className="text-sm font-black text-slate-100 uppercase tracking-tight">{f.title}</p>
+                                <p className="text-[11px] text-slate-400 font-bold">{f.desc}</p>
+                              </div>
+                          </div>
+                      ))}
+                  </div>
+
+                  <button className="w-full py-7 bg-white text-slate-900 rounded-[2.2rem] font-black text-sm uppercase tracking-[0.4em] shadow-2xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-4 group">
+                      Initialize Pro Access <Crown size={20} className="group-hover:rotate-12 transition-transform text-primary-500" />
+                  </button>
+                  <p className="text-center mt-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">Cancel anytime • Secure checkout via Stripe</p>
+             </div>
+        </section>
+
+        {/* SAVINGS LOGIC SECTION */}
+        <section className="mb-24">
+            <h2 className="text-[11px] font-black uppercase tracking-[0.5em] text-primary-500 text-center mb-16 italic">The Economics of Studio Pro</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                 <div className="bg-slate-900/50 p-10 rounded-[3rem] border border-white/5 shadow-sm text-center">
+                     <div className="w-16 h-16 bg-rose-500/10 text-rose-500 rounded-2xl flex items-center justify-center mx-auto mb-8">
+                         <Trash2 size={32} />
+                     </div>
+                     <h3 className="text-2xl font-black font-serif text-white mb-4">Zero Waste</h3>
+                     <p className="text-slate-400 text-sm leading-relaxed font-medium">
+                       Our "Use It Soon" algorithm saves users an average of <b>$120/month</b> by suggesting recipes for ingredients before they expire.
+                     </p>
+                 </div>
+                 <div className="bg-slate-900/50 p-10 rounded-[3rem] border border-white/5 shadow-sm text-center">
+                     <div className="w-16 h-16 bg-emerald-500/10 text-emerald-500 rounded-2xl flex items-center justify-center mx-auto mb-8">
+                         <ShoppingBag size={32} />
+                     </div>
+                     <h3 className="text-2xl font-black font-serif text-white mb-4">Optimized Buys</h3>
+                     <p className="text-slate-400 text-sm leading-relaxed font-medium">
+                       Stop impulse buying. Studio Pro calculates <b>exact portions</b>, meaning you only buy precisely what you need to cook.
+                     </p>
+                 </div>
+                 <div className="bg-slate-900/50 p-10 rounded-[3rem] border border-white/5 shadow-sm text-center">
+                     <div className="w-16 h-16 bg-indigo-500/10 text-indigo-500 rounded-2xl flex items-center justify-center mx-auto mb-8">
+                         <Wallet size={32} />
+                     </div>
+                     <h3 className="text-2xl font-black font-serif text-white mb-4">Time = Capital</h3>
+                     <p className="text-slate-400 text-sm leading-relaxed font-medium">
+                       Save 4+ hours weekly on meal planning and manual list building. At a median wage, that's over <b>$400/month</b> in reclaimed time value.
+                     </p>
+                 </div>
+            </div>
+        </section>
+
+        {/* TRUST SIGNALS */}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-12 border-t border-white/5 pt-20">
+            <div className="flex items-start gap-6">
+                 <div className="p-4 bg-slate-900 rounded-2xl text-primary-500">
+                     <ShieldCheck size={24} />
+                 </div>
+                 <div>
+                     <h4 className="text-lg font-black text-white uppercase tracking-tight mb-2">Encrypted Manifests</h4>
+                     <p className="text-xs text-slate-500 leading-relaxed">Your dietary data and inventory history are secured with bank-grade AES-256 encryption. We prioritize your studio's privacy.</p>
+                 </div>
+            </div>
+            <div className="flex items-start gap-6">
+                 <div className="p-4 bg-slate-900 rounded-2xl text-primary-500">
+                     <Zap size={24} />
+                 </div>
+                 <div>
+                     <h4 className="text-lg font-black text-white uppercase tracking-tight mb-2">Instant Orchestration</h4>
+                     <p className="text-xs text-slate-500 leading-relaxed">Switch between devices seamlessly. Your inventory syncs across mobile, tablet, and desktop in real-time without latency.</p>
+                 </div>
+            </div>
+        </section>
+
+        {/* FINAL CTA */}
+        <section className="text-center py-32">
+            <button 
+              onClick={() => navigate('/studio')}
+              className="inline-flex items-center gap-4 bg-primary-600 text-white px-12 py-6 rounded-[2rem] font-black text-sm uppercase tracking-[0.4em] shadow-2xl hover:bg-primary-500 hover:scale-105 active:scale-95 transition-all"
+            >
+              Start Curation Cycle <ArrowRight size={20} />
+            </button>
+            <p className="mt-8 text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 italic">
+              Experience the future of home logistics.
             </p>
-        </div>
-      </section>
-
-      {/* CRITICAL ACCURACY DISCLAIMER */}
-      <section className="mb-20">
-          <div className="bg-rose-50 dark:bg-rose-950/20 border-2 border-rose-500/30 rounded-[3rem] p-10 md:p-14 relative overflow-hidden group">
-               <div className="flex flex-col md:flex-row gap-10 items-start">
-                   <div className="w-16 h-16 bg-rose-500 text-white rounded-2xl flex items-center justify-center shrink-0 shadow-lg shadow-rose-500/20">
-                       <AlertTriangle size={32} />
-                   </div>
-                   <div className="space-y-6">
-                       <h2 className="text-3xl font-black font-serif text-slate-900 dark:text-white uppercase tracking-tight">Technical Accuracy Notice</h2>
-                       <div className="space-y-4 text-slate-600 dark:text-slate-300 font-medium leading-relaxed">
-                           <p>
-                             Prepzu is an AI-powered orchestration engine. While we utilize state-of-the-art Large Language Models (Gemini 3 series), **our outputs are estimations and NOT 100% accurate.**
-                           </p>
-                           <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                               <li className="flex items-start gap-3 bg-white dark:bg-slate-900/50 p-4 rounded-2xl border border-rose-100 dark:border-rose-900/30">
-                                   <div className="w-1.5 h-1.5 rounded-full bg-rose-500 mt-2 shrink-0"></div>
-                                   <span className="text-xs font-bold">Nutritional data (calories, macros) are calculated based on general averages, not specific brand lab tests.</span>
-                               </li>
-                               <li className="flex items-start gap-3 bg-white dark:bg-slate-900/50 p-4 rounded-2xl border border-rose-100 dark:border-rose-900/30">
-                                   <div className="w-1.5 h-1.5 rounded-full bg-rose-500 mt-2 shrink-0"></div>
-                                   <span className="text-xs font-bold">Recipe times and temperatures are suggested based on standard logic; actual hardware performance varies.</span>
-                               </li>
-                               <li className="flex items-start gap-3 bg-white dark:bg-slate-900/50 p-4 rounded-2xl border border-rose-100 dark:border-rose-900/30">
-                                   <div className="w-1.5 h-1.5 rounded-full bg-rose-500 mt-2 shrink-0"></div>
-                                   <span className="text-xs font-bold">Ingredient substitutions may not always account for complex chemical reactions in baking or advanced techniques.</span>
-                               </li>
-                               <li className="flex items-start gap-3 bg-white dark:bg-slate-900/50 p-4 rounded-2xl border border-rose-100 dark:border-rose-900/30">
-                                   <div className="w-1.5 h-1.5 rounded-full bg-rose-500 mt-2 shrink-0"></div>
-                                   <span className="text-xs font-bold">Image visualizations are AI-generated and may not perfectly represent the final plated dish.</span>
-                               </li>
-                           </ul>
-                           <p className="text-xs font-black uppercase tracking-widest text-slate-400 mt-6 bg-slate-100 dark:bg-slate-800/50 p-4 rounded-xl text-center border border-slate-200 dark:border-slate-800">
-                             Always verify food safety, internal temperatures, and allergen data manually.
-                           </p>
-                       </div>
-                   </div>
-               </div>
-          </div>
-      </section>
-
-      {/* SYSTEM ARCHITECTURE */}
-      <section className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-24">
-          
-          <div className="bg-white dark:bg-slate-900 rounded-[3rem] p-10 border border-slate-100 dark:border-slate-800 shadow-sm">
-               <div className="w-14 h-14 bg-primary-100 dark:bg-primary-900/30 rounded-2xl flex items-center justify-center text-primary-600 mb-8">
-                   <Microscope size={28} />
-               </div>
-               <h3 className="text-2xl font-black font-serif mb-4 text-slate-900 dark:text-white">Studio Curation Logic</h3>
-               <p className="text-slate-500 dark:text-slate-400 leading-relaxed font-medium mb-6">
-                 Our recipes aren't "searched"—they are synthesized. The Studio Engine analyzes your available inventory, household size, and time constraints to draft a technical instruction set unique to your session.
-               </p>
-               <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">
-                   <div className="flex items-center gap-2 mb-2">
-                       <Database size={14} className="text-primary-500" />
-                       <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Data Sources</span>
-                   </div>
-                   <p className="text-[10px] font-bold text-slate-600 dark:text-slate-300">OpenFoodRepo API + LLM Technical Knowledge Base + User Preferences Matrix</p>
-               </div>
-          </div>
-
-          <div className="bg-white dark:bg-slate-900 rounded-[3rem] p-10 border border-slate-100 dark:border-slate-800 shadow-sm">
-               <div className="w-14 h-14 bg-indigo-100 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center text-indigo-600 mb-8">
-                   <Eye size={28} />
-               </div>
-               <h3 className="text-2xl font-black font-serif mb-4 text-slate-900 dark:text-white">Vision Recognition</h3>
-               <p className="text-slate-500 dark:text-slate-400 leading-relaxed font-medium mb-6">
-                 When you scan a receipt or a shelf, we use OCR and multimodal object detection. It identifies item names and maps them to common culinary categories automatically.
-               </p>
-               <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700">
-                   <div className="flex items-center gap-2 mb-2">
-                       <Zap size={14} className="text-indigo-500" />
-                       <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Processing Time</span>
-                   </div>
-                   <p className="text-[10px] font-bold text-slate-600 dark:text-slate-300">Average 3.4 seconds per scan cycle. Accuracy depends on lighting and text clarity.</p>
-               </div>
-          </div>
-
-      </section>
-
-      {/* CALL TO ACTION */}
-      <section className="text-center">
-          <button 
-            onClick={() => navigate('/studio')}
-            className="inline-flex items-center gap-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-12 py-6 rounded-[2rem] font-black text-xs uppercase tracking-[0.3em] shadow-2xl hover:scale-105 active:scale-95 transition-all"
-          >
-            Return to Studio <ArrowRight size={20} />
-          </button>
-          <p className="mt-8 text-[10px] font-black uppercase tracking-[0.4em] text-slate-400">
-            Prepzu Intelligence System • Version 1.2
-          </p>
-      </section>
-
+        </section>
+      </div>
     </div>
   );
 };

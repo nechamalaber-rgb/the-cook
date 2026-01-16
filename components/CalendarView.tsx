@@ -8,7 +8,8 @@ import {
   Trash2, X, TrendingUp, Plus,
   Wand2, PieChart, Loader2, Sparkles, ScrollText, Calendar, ShoppingCart, ArrowRight, Beef, Milk, Scale, User, Wallet, Timer
 } from 'lucide-react';
-import { generateWeeklyPlan, estimateMealCalories, generateKosherWeeklyPlan, generateSmartRecipes } from '../services/geminiService';
+// Corrected import: replaced generateSmartRecipes with generateSingleSmartRecipe
+import { generateWeeklyPlan, estimateMealCalories, generateKosherWeeklyPlan, generateSingleSmartRecipe } from '../services/geminiService';
 
 interface CalendarViewProps {
   mealHistory: MealLog[];
@@ -117,18 +118,19 @@ const CalendarView: React.FC<CalendarViewProps> = ({
       }
 
       try {
-          const recipes = await generateSmartRecipes(pantryItems, preferences || {} as UserPreferences, {
+          // Corrected call: use generateSingleSmartRecipe and handle single return object
+          const recipe = await generateSingleSmartRecipe(pantryItems, preferences || {} as UserPreferences, {
               customRequest: `Generate a detailed recipe for: ${meal.recipeTitle}. Must be around ${meal.calories || 450} calories.`,
               recipeCount: 1,
               mealType: meal.mealType as any,
               maxTime: '45',
               servings: preferences?.householdSize || 2
-          });
+          }, 0);
 
-          if (recipes && recipes.length > 0) {
+          if (recipe && recipe.title) {
               const fullRecipe = { 
-                  ...recipes[0], 
-                  id: meal.recipeId.startsWith('auto-') || meal.recipeId.startsWith('kosher-') ? meal.recipeId : recipes[0].id,
+                  ...recipe, 
+                  id: meal.recipeId.startsWith('auto-') || meal.recipeId.startsWith('kosher-') ? meal.recipeId : recipe.id,
                   title: meal.recipeTitle 
               }; 
               setActiveRecipe(fullRecipe);
@@ -368,7 +370,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                                   <span className="text-xl font-black">{dailyMeals.length}</span>
                               </div>
                               <div className="flex-1 bg-white/5 p-4 rounded-2xl border border-white/5">
-                                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 block mb-1">Completion</span>
+                                  <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-1">Completion</span>
                                   <span className="text-xl font-black">{dailyMeals.length > 0 ? Math.round((consumedMeals.length / dailyMeals.length) * 100) : 0}%</span>
                               </div>
                           </div>
@@ -553,7 +555,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                                       <button 
                                         key={t}
                                         onClick={() => setPlanConfig({...planConfig, maxTime: t})}
-                                        className={`py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest text-left transition-all border ${planConfig.maxTime === t ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-500 text-amber-600 dark:text-amber-400' : 'bg-slate-50 dark:bg-slate-800 border-transparent text-slate-400 hover:border-slate-300'}`}
+                                        className={`py-3 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest text-left transition-all border ${planConfig.maxTime === t ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-500 text-amber-600 dark:text-emerald-400' : 'bg-slate-50 dark:bg-slate-800 border-transparent text-slate-400 hover:border-slate-300'}`}
                                       >
                                           {t} Mins
                                       </button>

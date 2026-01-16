@@ -54,10 +54,11 @@ const LandingView: React.FC<LandingViewProps> = ({ onStart, onSignIn, onSignOut,
   };
 
   const studioFeatures = [
-    'AI Recipe Curation',
-    'Inventory Scanning',
-    'Shopping Logistics',
-    'Standard Support'
+    'Unlimited AI Recipe Curation',
+    'High-Precision Inventory Scanning',
+    'Advanced Shopping Logistics',
+    'Macro-Nutrient Analytics',
+    'Instacart & Walmart Integration'
   ];
 
   return (
@@ -74,12 +75,11 @@ const LandingView: React.FC<LandingViewProps> = ({ onStart, onSignIn, onSignOut,
               <button onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})} className="text-[13px] font-bold text-slate-400 hover:text-primary-500 transition-colors uppercase tracking-widest">Home</button>
               <button onClick={() => scrollToSection('philosophy')} className="text-[13px] font-bold text-slate-400 hover:text-primary-500 transition-colors uppercase tracking-widest">Philosophy</button>
               <button onClick={() => scrollToSection('workflow')} className="text-[13px] font-bold text-slate-400 hover:text-primary-500 transition-colors uppercase tracking-widest">How It Works</button>
-              <button onClick={() => scrollToSection('pricing')} className="text-[13px] font-bold text-slate-400 hover:text-primary-500 transition-colors uppercase tracking-widest">Plans</button>
           </nav>
           <div className="flex items-center gap-2 md:gap-4">
               {!currentUser ? (
                   <button onClick={onSignIn} className="px-4 md:px-6 py-2 md:py-2.5 bg-primary-500 text-white rounded-xl font-black text-[9px] md:text-[10px] uppercase tracking-[0.1em] md:tracking-[0.2em] shadow-lg shadow-primary-500/20 flex items-center gap-1.5 md:gap-2 hover:scale-105 active:scale-95 transition-all whitespace-nowrap">
-                    Sign Up by the Studio
+                    Launch Studio Free
                   </button>
               ) : (
                   <div className="flex items-center gap-2 md:gap-3">
@@ -102,11 +102,10 @@ const LandingView: React.FC<LandingViewProps> = ({ onStart, onSignIn, onSignOut,
               <Sparkles size={16} className="text-primary-400" />
               <span className="text-[11px] font-black uppercase tracking-[0.2em] text-white">Culinary Intelligence for the Home</span>
             </div>
-            <h1 className={`text-6xl md:text-8xl font-serif font-light leading-[1.1] mb-10 tracking-tight transition-all duration-1000 delay-500 transform ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>Master your kitchen. <br/><span className="italic font-normal text-primary-400">Intelligently.</span></h1>
-            <p className={`text-xl md:text-2xl text-slate-400 max-w-2xl mb-12 font-light leading-relaxed transition-all duration-1000 delay-700 transform ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>Transform your chaotic pantry into a stream of culinary consciousness. Synchronize inventory, curate menus, and orchestrate meals with master chef precision.</p>
+            <h1 className={`text-6xl md:text-8xl font-serif font-light leading-[1.1] mb-10 tracking-tight transition-all duration-1000 delay-500 transform ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'}`}>Turn your pantry into <br/><span className="italic font-normal text-primary-400">Gourmet Recipes.</span></h1>
+            <p className={`text-xl md:text-2xl text-slate-400 max-w-2xl mb-12 font-light leading-relaxed transition-all duration-1000 delay-700 transform ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>Prepzu intelligently scans your ingredients to design professional meals tailored to what you have. Track your inventory automatically, reduce food waste, and sync missing items directly to Walmart and Instacart.</p>
             <div className={`flex flex-col sm:flex-row gap-5 justify-center md:justify-start transition-all duration-1000 delay-1000 transform ${isLoaded ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
                 <button onClick={onStart} className="px-10 py-5 bg-primary-500 text-white rounded-[2rem] font-black text-lg shadow-2xl shadow-primary-500/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 uppercase tracking-widest">Launch Studio <ArrowRight size={22} /></button>
-                <button onClick={() => scrollToSection('philosophy')} className="px-10 py-5 bg-white/5 border border-white/10 text-white rounded-[2rem] font-black text-lg backdrop-blur-md hover:bg-white/10 transition-all flex items-center justify-center gap-3 uppercase tracking-widest">Our Philosophy</button>
             </div>
           </div>
         </div>
@@ -191,66 +190,6 @@ const LandingView: React.FC<LandingViewProps> = ({ onStart, onSignIn, onSignOut,
                   </ScrollReveal>
               </div>
           </div>
-      </section>
-
-      {/* Pricing */}
-      <section id="pricing" className="py-32 bg-[#000000] border-t border-white/5 text-center">
-        <div className="max-w-7xl mx-auto px-6 md:px-12">
-           <ScrollReveal>
-               <div className="mb-20">
-                  <h2 className="text-5xl md:text-6xl font-black font-serif mb-6 tracking-tight">One Studio. <span className="text-primary-500">Dual Options.</span></h2>
-                  <p className="text-slate-400 text-lg max-w-2xl mx-auto leading-relaxed">The exact same Studio experience, billed your way.</p>
-               </div>
-           </ScrollReveal>
-           <ScrollReveal delay={200}>
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto items-stretch">
-                  
-                  {/* Monthly Card */}
-                  <div className="flex flex-col p-8 md:p-10 rounded-[2.5rem] border border-white/10 bg-white/5 relative overflow-hidden text-left transition-all duration-500 hover:border-primary-500/40 group min-h-[500px] justify-between">
-                    <div>
-                        <div className="mb-8 p-3 bg-white/10 w-fit rounded-xl text-slate-400 group-hover:text-white transition-colors"><Logo className="w-6 h-6" /></div>
-                        <h3 className="text-3xl font-black font-serif mb-2 text-white">Monthly Pro</h3>
-                        <p className="text-slate-400 text-[10px] mb-8 font-black uppercase tracking-widest">Flexible Billing</p>
-                        <div className="text-5xl font-serif mb-8 text-white">$9.99 <span className="text-[10px] font-sans text-slate-500 uppercase tracking-widest">/ month</span></div>
-                        <ul className="space-y-4 mb-8 text-slate-300 text-sm font-medium">
-                          {studioFeatures.map((feat, i) => (
-                              <li key={i} className="flex items-center gap-4"><Check size={18} className="text-primary-400"/> {feat}</li>
-                          ))}
-                        </ul>
-                    </div>
-                    <button onClick={onSignIn} className="w-full py-5 bg-white/10 border border-white/10 text-white rounded-full font-black uppercase tracking-widest text-[11px] hover:bg-white hover:text-black transition-all flex items-center justify-center gap-3">Register by the Studio <ArrowRight size={16}/></button>
-                  </div>
-
-                  {/* Yearly Card */}
-                  <div className="flex flex-col p-8 md:p-10 rounded-[2.5rem] border-2 border-primary-500 bg-primary-950/20 relative overflow-hidden text-left shadow-[0_0_80px_rgba(176,141,106,0.15)] transition-all duration-500 hover:shadow-[0_0_100px_rgba(176,141,106,0.25)] group min-h-[500px] justify-between transform hover:-translate-y-2">
-                    <div className="absolute top-0 right-0 bg-primary-500 text-white text-[9px] font-black uppercase tracking-[0.2em] px-8 py-2.5 rounded-bl-[2rem] shadow-lg animate-pulse z-10">Best Value</div>
-                    
-                    <div>
-                        <div className="mb-8 p-3 bg-primary-500 w-fit rounded-xl text-white shadow-lg group-hover:scale-110 transition-transform"><Logo className="w-6 h-6" /></div>
-                        <h3 className="text-3xl font-black font-serif mb-2 text-white">Yearly Elite</h3>
-                        <p className="text-primary-400 text-[10px] mb-8 font-black uppercase tracking-widest flex items-center gap-2"><Flame size={14} className="animate-pulse" /> Complete Studio Savings</p>
-                        
-                        <div className="mb-8">
-                          <div className="flex items-baseline gap-2">
-                            <span className="text-6xl font-serif text-white tracking-tighter">$30</span>
-                            <span className="text-slate-500 uppercase tracking-widest text-[10px] font-black font-sans">/ year</span>
-                          </div>
-                          <p className="text-emerald-500 text-[10px] font-black uppercase tracking-widest mt-2 bg-emerald-500/10 px-3 py-1.5 rounded-lg inline-block border border-emerald-500/20">Save 75% • Only $2.50 / Month</p>
-                        </div>
-
-                        <ul className="space-y-4 mb-8 text-slate-100 text-sm font-medium">
-                          {studioFeatures.map((feat, i) => (
-                              <li key={i} className="flex items-center gap-4"><Check size={18} className="text-primary-400"/> {feat}</li>
-                          ))}
-                        </ul>
-                    </div>
-
-                    <button onClick={onSignIn} className="w-full py-6 bg-white text-black rounded-full font-black uppercase tracking-[0.3em] text-xs hover:bg-slate-200 transition-all flex items-center justify-center gap-3 shadow-2xl group-hover:scale-[1.02]">Sign Up by the Studio <ChevronRight size={18}/></button>
-                  </div>
-
-               </div>
-           </ScrollReveal>
-        </div>
       </section>
     </div>
   );

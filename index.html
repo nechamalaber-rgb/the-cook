@@ -1,12 +1,12 @@
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover" />
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#0f172a">
+    <meta name="theme-color" content="#090e1a">
     <meta name="description" content="Prepzu - The AI-powered pantry manager and recipe studio." />
     <meta property="og:title" content="Prepzu Studio" />
     <meta property="og:description" content="Turn your pantry into a culinary masterpiece with AI." />
@@ -83,29 +83,23 @@
     <style>
       body { 
         font-family: 'Plus Jakarta Sans', sans-serif; 
-        background-color: #f8fafc; 
-        color: #0f172a; 
+        background-color: #090e1a; 
+        color: #f8fafc; 
         -webkit-tap-highlight-color: transparent; 
         transition: background-color 0.3s ease;
         overscroll-behavior-y: contain;
       }
-      .dark body { background-color: #090e1a; color: #f8fafc; }
       
       .no-scrollbar::-webkit-scrollbar { display: none; }
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       
       .glass-panel {
-        background: rgba(255, 255, 255, 0.7);
+        background: rgba(15, 23, 42, 0.8);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-      }
-      .dark .glass-panel {
-        background: rgba(15, 23, 42, 0.8);
         border: 1px solid rgba(255, 255, 255, 0.05);
       }
 
-      /* Custom Range Input Styling for Production Polish */
       input[type=range] {
         -webkit-appearance: none;
         background: transparent;
@@ -123,29 +117,29 @@
       input[type=range]::-webkit-slider-runnable-track {
         width: 100%;
         height: 8px;
-        background: #e2e8f0;
+        background: #1e293b;
         border-radius: 4px;
       }
-      .dark input[type=range]::-webkit-slider-runnable-track {
-        background: #1e293b;
-      }
     </style>
-  <script type="importmap">
+    <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@^19.2.3",
+    "react": "https://esm.sh/react@19.0.0",
+    "react-dom": "https://esm.sh/react-dom@19.0.0",
+    "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
+    "lucide-react": "https://esm.sh/lucide-react@0.475.0?external=react",
+    "@google/genai": "https://esm.sh/@google/genai@1.34.0",
+    "react-router-dom": "https://esm.sh/react-router-dom@7.1.5?external=react,react-dom",
+    "@stripe/stripe-js": "https://esm.sh/@stripe/stripe-js@4.0.0",
+    "@stripe/react-stripe-js": "https://esm.sh/@stripe/react-stripe-js@2.7.1?external=react,react-dom,@stripe/stripe-js",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
-    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
-    "react-router-dom": "https://esm.sh/react-router-dom@^7.11.0",
-    "@stripe/stripe-js": "https://esm.sh/@stripe/stripe-js@^4.0.0",
-    "@stripe/react-stripe-js": "https://esm.sh/@stripe/react-stripe-js@^2.7.1?external=react,react-dom,@stripe/stripe-js"
+    "react/": "https://esm.sh/react@^19.2.3/"
   }
 }
 </script>
-</head>
+  </head>
   <body>
     <div id="root"></div>
+    <script type="module" src="index.tsx"></script>
   </body>
 </html>

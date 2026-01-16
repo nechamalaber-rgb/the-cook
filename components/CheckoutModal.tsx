@@ -83,7 +83,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, planName 
                                 <CheckCircle2 size={40} />
                             </div>
                             <h2 className="text-3xl font-black text-slate-900 dark:text-white font-serif mb-2">Upgrade Complete</h2>
-                            <p className="text-slate-500 font-medium">Welcome to GatherHome {planName}</p>
+                            <p className="text-slate-500 font-medium">Welcome to Prepzu Studio Pro</p>
                         </div>
                     ) : isDemoMode ? (
                         <div className="flex flex-col items-center justify-center h-full p-8 animate-fade-in">
@@ -93,7 +93,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, planName 
                                         Backend Unavailable
                                     </div>
                                     <h3 className="text-2xl font-black text-slate-900 dark:text-white font-serif">Simulate Payment</h3>
-                                    <p className="text-slate-500 text-sm mt-2">The Ruby server couldn't be reached. You can complete a mock payment to test the flow.</p>
+                                    <p className="text-slate-500 text-sm mt-2">The server couldn't be reached. You can complete a mock payment to test the flow.</p>
                                 </div>
                                 <form onSubmit={handleDemoPayment} className="space-y-4">
                                     <div className="space-y-2">
@@ -119,7 +119,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ onClose, planName 
                                         className="w-full py-4 mt-4 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl font-black text-xs uppercase tracking-widest shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                                     >
                                         {demoProcessing ? <Loader2 size={16} className="animate-spin" /> : <Lock size={16} />}
-                                        {demoProcessing ? 'Processing...' : `Pay $${planName.includes('Pro') ? '9.99' : '18.99'}`}
+                                        {demoProcessing ? 'Processing...' : `Pay $14.99`}
                                     </button>
                                 </form>
                             </div>

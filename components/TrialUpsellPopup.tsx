@@ -68,7 +68,7 @@ const TrialUpsellPopup: React.FC<TrialUpsellPopupProps> = ({ onClose, onClaim })
                     <div className="p-2.5 bg-primary-600 rounded-xl text-white shadow-lg mb-2">
                         <Logo className="w-8 h-8" />
                     </div>
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center leading-none">STUDIO<br/>ELITE</span>
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center leading-none">STUDIO<br/>PRO</span>
                 </div>
              </div>
           </div>
@@ -96,14 +96,14 @@ const TrialUpsellPopup: React.FC<TrialUpsellPopupProps> = ({ onClose, onClaim })
           <div className="w-full space-y-4">
               <button 
                 onClick={onClaim}
-                className="w-full py-6 bg-white text-[#2563eb] rounded-2xl font-black text-sm uppercase tracking-[0.3em] shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all"
+                className="w-full py-6 bg-white text-[#2563eb] rounded-2xl font-black text-sm uppercase tracking-[0.3em] shadow-2xl hover:scale-[1.02] active:scale-98 transition-all"
               >
-                Sign Up by the Studio
+                Activate Your Free 3-Day Trial
               </button>
               
               <div className="flex flex-col gap-2 pt-2">
                   <div className="flex items-center justify-center gap-2 text-[10px] font-black text-white/60 uppercase tracking-widest">
-                      <Zap size={14} className="text-yellow-400" /> Bills $30.00/yr starting Day 3
+                      <Zap size={14} className="text-yellow-400" /> Bills $14.99/mo starting Day 3
                   </div>
                   <div className="flex items-center justify-center gap-2 text-[9px] font-bold text-white/40 uppercase tracking-[0.2em]">
                       Cancel anytime in settings • No charge today
