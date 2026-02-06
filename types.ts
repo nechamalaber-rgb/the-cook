@@ -138,6 +138,7 @@ export interface UserPreferences {
   activeWalkthroughStep?: number;
   personalTasteBio: string; // The specific bio for AI to listen to
   cookingStyle: 'simple' | 'culinary';
+  freeGenerationsUsed?: number; // Tracks usage for non-pro members
 }
 
 export interface RecipeGenerationOptions {
@@ -149,6 +150,7 @@ export interface RecipeGenerationOptions {
   recipeCount?: number;
   complexity?: 'Simple' | 'Gourmet';
   excludedIngredients?: string[];
+  excludeTitles?: string[];
 }
 
 export interface ChatMessage {

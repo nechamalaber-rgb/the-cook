@@ -42,7 +42,7 @@ const AboutView: React.FC = () => {
                   
                   <div className="mb-12">
                       <div className="flex items-baseline gap-4 mb-2">
-                          <span className="text-8xl font-black font-serif text-white tracking-tighter">$17.99</span>
+                          <span className="text-8xl font-black font-serif text-white tracking-tighter">$14.99</span>
                           <span className="text-slate-500 font-bold text-lg uppercase tracking-widest">/ Month</span>
                       </div>
                       <p className="text-primary-400 text-xs font-black uppercase tracking-widest flex items-center gap-2">
@@ -52,7 +52,7 @@ const AboutView: React.FC = () => {
 
                   <div className="grid md:grid-cols-1 gap-6 mb-12">
                       {[
-                        { title: "Unlimited AI Synthesis", desc: "No caps on recipe generation. Infinite culinary creativity." },
+                        { title: "Unlimited AI Synthesis", desc: "No caps. Generate recipes, plans, and lists endlessly." },
                         { title: "Precision Vision OCR", desc: "Instant manifest population from receipts and shelves." },
                         { title: "Complete Macro Analysis", desc: "Detailed tracking of calories, protein, and nutrients." },
                         { title: "Auto-Supply Sync", desc: "Direct integration with Walmart & Instacart logistics." },
@@ -70,7 +70,10 @@ const AboutView: React.FC = () => {
                       ))}
                   </div>
 
-                  <button className="w-full py-7 bg-white text-slate-900 rounded-[2.2rem] font-black text-sm uppercase tracking-[0.4em] shadow-2xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-4 group">
+                  <button 
+                    onClick={() => navigate('/plans')}
+                    className="w-full py-7 bg-white text-slate-950 rounded-[2.2rem] font-black text-sm uppercase tracking-[0.4em] shadow-2xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-4 group"
+                  >
                       Initialize Pro Access <Crown size={20} className="group-hover:rotate-12 transition-transform text-primary-500" />
                   </button>
                   <p className="text-center mt-6 text-[10px] font-black text-slate-500 uppercase tracking-widest">Cancel anytime • Secure checkout via Stripe</p>
@@ -105,7 +108,7 @@ const AboutView: React.FC = () => {
                      </div>
                      <h3 className="text-2xl font-black font-serif text-white mb-4">Time = Capital</h3>
                      <p className="text-slate-400 text-sm leading-relaxed font-medium">
-                       Save 4+ hours weekly on meal planning and manual list building. At a median wage, that's over <b>$400/month</b> in reclaimed time value.
+                       Save 4+ hours weekly on meal planning and manual list building. At a median wage, that's over <b>$400/month</b> by reclaimed time value.
                      </p>
                  </div>
             </div>

@@ -1,12 +1,10 @@
-
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { 
-  ArrowRight, Sparkles, DollarSign, Zap, ShieldCheck, 
-  ShoppingCart, Box, ChevronRight, Settings, Calendar,
-  History, MessageSquarePlus, Camera, UserPlus, Wand2, Search, Filter,
-  Plus, Crown
+  ArrowRight, ChevronRight, X,
+  Box, Plus, Sparkles, ShoppingBag, Zap, UserPlus, ArrowUp, ArrowDown
 } from 'lucide-react';
+import { Logo } from './Logo';
 
 interface WalkthroughProps {
   onComplete: () => void;
@@ -17,124 +15,55 @@ const STEPS = [
   {
     targetId: 'nav-inventory',
     route: '/pantry',
-    title: '1. Your Kitchen List',
-    description: "This shows you all the food you have at home. No more guessing what is in the back of the fridge!",
-    benefit: "Stops you from buying things you already have.",
-    icon: <Box size={18} className="text-primary-400" />
+    title: 'Pantry',
+    description: "This is your inventory. Keep it updated so we know what you can cook.",
+    icon: <Box size={14} className="text-primary-400" />
   },
   {
     targetId: 'pantry-add-btn',
     route: '/pantry',
-    title: '2. Adding Food',
-    description: "Tap this button when you buy new groceries to add them to your list.",
-    benefit: "Keeps your digital list perfect.",
-    icon: <Plus size={18} className="text-amber-400" />
-  },
-  {
-    targetId: 'pantry-add-btn',
-    route: '/pantry',
-    title: '3. Scan Receipts',
-    description: "You can even take a photo of your paper receipt! The app reads it and adds the food for you.",
-    benefit: "Saves you from typing every item.",
-    icon: <Camera size={18} className="text-primary-400" />
+    title: 'Add Food',
+    description: "Add ingredients here. You can even scan a receipt photo.",
+    icon: <Plus size={14} className="text-emerald-400" />
   },
   {
     targetId: 'nav-studio',
     route: '/studio', 
-    title: '4. The Recipe Maker',
-    description: "This part finds recipes you can cook using only the food you already have.",
-    benefit: "Uses up food before it goes bad.",
-    icon: <Sparkles size={18} className="text-indigo-400" />
+    title: 'Recipes',
+    description: "Our AI finds meals using only the items you already have.",
+    icon: <Sparkles size={14} className="text-indigo-400" />
   },
   {
-    targetId: 'nav-calendar',
-    route: '/calendar',
-    title: '5. Weekly Plan',
-    description: "Pick which recipes you want to eat for the next few days.",
-    benefit: "No more stress about 'what is for dinner?'",
-    icon: <Calendar size={18} className="text-rose-400" />
+    targetId: 'init-logic-cycle-btn', 
+    route: '/studio',
+    title: 'Find Recipes',
+    description: "Hit this to generate 4 fresh meal ideas instantly.",
+    icon: <Zap size={14} className="text-amber-400" />
   },
   {
     targetId: 'nav-cart',
     route: '/shopping',
-    title: '6. The Shopping Cart',
-    description: "This is your smart list. It knows exactly what you are missing for your planned meals.",
-    benefit: "Only buy what you actually need.",
-    icon: <ShoppingCart size={18} className="text-emerald-400" />
-  },
-  {
-    targetId: 'orchestrate-manifest-section',
-    route: '/shopping',
-    title: '7. AI Grocery Helper',
-    description: "Type something like '5 cheap dinners' and the app will build the whole list for you.",
-    benefit: "Like a personal helper for your shopping.",
-    icon: <Wand2 size={18} className="text-primary-400" />
-  },
-  {
-    targetId: 'cart-view-toggles',
-    route: '/shopping',
-    title: '8. One-Tap Reorder',
-    description: "Look at your old grocery trips and buy the same milk or eggs again with one tap.",
-    benefit: "Saves a lot of time every week.",
-    icon: <History size={18} className="text-sky-400" />
-  },
-  {
-    targetId: 'nav-settings',
-    route: '/settings',
-    title: '9. Your Palate',
-    description: "Tell the app what you like, what you hate, and if you have any allergies.",
-    benefit: "Recipes get better as the app learns your taste.",
-    icon: <Settings size={18} className="text-slate-400" />
-  },
-  {
-    targetId: 'nav-inventory',
-    route: '/pantry',
-    title: '10. Fast Search',
-    description: "Use this to quickly find a specific item in your big food list.",
-    benefit: "Find things fast in a crowded pantry.",
-    icon: <Search size={18} className="text-primary-400" />
-  },
-  {
-    targetId: 'nav-go-pro',
-    route: '/pantry',
-    title: '11. Go Pro Upgrade',
-    description: "Click here to unlock the full power. Get unlimited recipes and better AI scanning.",
-    benefit: "The ultimate tool for a perfect kitchen.",
-    icon: <Crown size={18} className="text-amber-500" />
-  },
-  {
-    targetId: 'nav-chat-trigger',
-    route: '/pantry',
-    title: '12. Chef Chat',
-    description: "Stuck while cooking? Tap the bubble to chat with the AI Chef anytime.",
-    benefit: "Get instant cooking help and tips.",
-    icon: <MessageSquarePlus size={18} className="text-white" />
+    title: 'Smart Cart',
+    description: "Missing items from recipes are automatically listed here.",
+    icon: <ShoppingBag size={14} className="text-rose-400" />
   },
   {
     targetId: 'nav-signup-btn',
     route: '/pantry',
-    title: '13. Save Your List',
-    description: "Don't forget to sign up for free! It keeps your list safe so you don't lose it.",
-    benefit: "Access your food list from any phone.",
-    icon: <UserPlus size={18} className="text-primary-500" />
-  },
-  {
-    targetId: 'main-header-auth-zone',
-    route: '/pantry',
-    title: '14. You Are All Set!',
-    description: "You are ready to go! Start by adding some food or picking a recipe to save money.",
-    benefit: "Welcome to a smarter kitchen.",
-    icon: <ShieldCheck size={18} className="text-emerald-500" />
+    title: 'Join Free',
+    description: "Create an account to save your kitchen and recipes.",
+    icon: <UserPlus size={14} className="text-primary-500" />
   }
 ];
 
 export const Walkthrough: React.FC<WalkthroughProps> = ({ onComplete, show }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  
+  const [showWelcome, setShowWelcome] = useState(true);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [targetRect, setTargetRect] = useState<DOMRect | null>(null);
   const [isReady, setIsReady] = useState(false);
-  const resizeObserver = useRef<ResizeObserver | null>(null);
 
   const currentStep = STEPS[currentStepIndex];
 
@@ -144,43 +73,82 @@ export const Walkthrough: React.FC<WalkthroughProps> = ({ onComplete, show }) =>
         onComplete();
         return;
     }
-
-    if (show && location.pathname !== currentStep.route) {
+    if (show && !showWelcome && location.pathname !== currentStep.route) {
         setIsReady(false);
-        navigate(currentStep.route);
+        navigate(currentStep.route, { replace: true });
     }
-  }, [show, currentStepIndex, currentStep.route, navigate, location.pathname]);
+  }, [show, showWelcome, currentStepIndex, currentStep.route, navigate, location.pathname, onComplete]);
 
   useEffect(() => {
-    if (show && location.pathname === currentStep.route) {
-      const updateRect = () => {
-        const el = document.getElementById(currentStep.targetId);
-        if (el) {
-          const rect = el.getBoundingClientRect();
-          if (rect.width > 0) {
-            setTargetRect(rect);
-            setIsReady(true);
-          }
-        }
-      };
+    if (showWelcome || !show) return;
 
-      const timer = setInterval(updateRect, 100);
-      const el = document.getElementById(currentStep.targetId);
-      if (el && 'ResizeObserver' in window) {
-        resizeObserver.current = new ResizeObserver(updateRect);
-        resizeObserver.current.observe(document.body);
+    const updateRect = () => {
+      let el = document.getElementById(currentStep.targetId);
+      
+      if (!el && currentStepIndex === 3) {
+           const buttons = document.getElementsByTagName('button');
+           for(let i=0; i<buttons.length; i++) {
+               if(buttons[i].textContent?.toLowerCase().includes('find recipes')) {
+                   el = buttons[i];
+                   break;
+               }
+           }
       }
-
-      window.addEventListener('resize', updateRect);
-      return () => {
-          clearInterval(timer);
-          window.removeEventListener('resize', updateRect);
-          if (resizeObserver.current) resizeObserver.current.disconnect();
-      };
-    }
-  }, [show, currentStepIndex, currentStep.targetId, location.pathname]);
+      
+      if (el) {
+        const rect = el.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0) {
+          setTargetRect(rect);
+          setIsReady(true);
+        }
+      } else {
+          setTargetRect(null);
+          setIsReady(true);
+      }
+    };
+    
+    const timer = setTimeout(updateRect, 500);
+    const interval = setInterval(updateRect, 1000);
+    
+    window.addEventListener('resize', updateRect);
+    return () => {
+        clearTimeout(timer);
+        clearInterval(interval);
+        window.removeEventListener('resize', updateRect);
+    };
+  }, [show, showWelcome, currentStepIndex, currentStep.targetId, location.pathname]);
 
   if (!show) return null;
+
+  if (showWelcome) {
+      return (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-6 bg-slate-950/95 backdrop-blur-2xl animate-fade-in font-sans">
+              <div className="bg-[#0c1220] max-w-sm w-full rounded-[3.5rem] p-10 border border-white/10 shadow-[0_50px_120px_rgba(0,0,0,1)] text-center relative overflow-hidden animate-slide-up">
+                  <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary-500/5 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2" />
+                  <div className="relative z-10 flex flex-col items-center">
+                      <div className="w-20 h-20 bg-gradient-to-br from-slate-800 to-slate-950 rounded-[1.8rem] flex items-center justify-center text-primary-500 mb-8 border border-white/10 shadow-2xl rotate-3">
+                          <Logo className="w-10 h-10" />
+                      </div>
+                      <h2 className="text-3xl md:text-4xl font-black font-serif text-white mb-4 italic tracking-tight leading-none">
+                          Welcome home.
+                      </h2>
+                      <p className="text-slate-400 text-sm font-medium leading-relaxed mb-10 max-w-xs">
+                          Prepzu is your AI kitchen assistant. Let's find your way around.
+                      </p>
+                      <div className="flex flex-col w-full gap-3">
+                          <button 
+                              onClick={() => setShowWelcome(false)}
+                              className="w-full py-4 bg-white text-slate-900 rounded-2xl font-black text-[11px] uppercase tracking-[0.3em] shadow-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-4 group"
+                          >
+                              Quick Tour <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                          </button>
+                          <button onClick={onComplete} className="py-2 text-slate-500 hover:text-white font-black text-[9px] uppercase tracking-[0.3em] transition-colors">Skip for now</button>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      );
+  }
 
   const handleNext = () => {
     if (currentStepIndex < STEPS.length - 1) {
@@ -192,92 +160,119 @@ export const Walkthrough: React.FC<WalkthroughProps> = ({ onComplete, show }) =>
     }
   };
 
-  const skipTour = () => {
-      localStorage.setItem('ks_onboarding_final_seen', 'true');
-      onComplete();
-  };
-
-  const getTooltipStyle = () => {
+  const getCardPosition = () => {
     if (!targetRect) return { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' };
-    const padding = 16;
-    const tooltipWidth = 320; 
-    let left = Math.max(padding, Math.min(window.innerWidth - tooltipWidth - padding, (targetRect.left + targetRect.width / 2) - tooltipWidth / 2));
     
-    const spaceBelow = window.innerHeight - targetRect.bottom;
-    const top = spaceBelow > 380 ? targetRect.bottom + 25 : targetRect.top - 360;
+    const padding = 24;
+    const cardHeight = 220;
+    const cardWidth = 300;
+    
+    let top = targetRect.bottom + padding;
+    let left = targetRect.left + (targetRect.width / 2) - (cardWidth / 2);
 
-    return { top: Math.max(padding, top), left, width: tooltipWidth };
+    // Flip to top if bottom is crowded
+    if (top + cardHeight > window.innerHeight) {
+        top = targetRect.top - cardHeight - padding;
+    }
+    
+    // Contain within viewport
+    left = Math.max(padding, Math.min(window.innerWidth - cardWidth - padding, left));
+    top = Math.max(padding, Math.min(window.innerHeight - cardHeight - padding, top));
+
+    return { top, left, width: `${cardWidth}px`, position: 'fixed' as const };
   };
 
   return (
-    <div className={`fixed inset-0 z-[9999] transition-opacity duration-300 pointer-events-none ${isReady ? 'opacity-100' : 'opacity-0'}`}>
+    <div className={`fixed inset-0 z-[9999] transition-opacity duration-500 pointer-events-none font-sans ${isReady ? 'opacity-100' : 'opacity-0'}`}>
+      {/* High-Contrast Laser Spotlight */}
+      <div 
+        className="absolute inset-0 bg-slate-950/85 backdrop-blur-[2px]"
+        style={{
+            maskImage: targetRect ? `radial-gradient(circle at ${targetRect.left + targetRect.width / 2}px ${targetRect.top + targetRect.height / 2}px, transparent ${Math.max(targetRect.width, targetRect.height) / 1.6}px, black ${Math.max(targetRect.width, targetRect.height) / 1.6 + 20}px)` : 'none',
+            WebkitMaskImage: targetRect ? `radial-gradient(circle at ${targetRect.left + targetRect.width / 2}px ${targetRect.top + targetRect.height / 2}px, transparent ${Math.max(targetRect.width, targetRect.height) / 1.6}px, black ${Math.max(targetRect.width, targetRect.height) / 1.6 + 20}px)` : 'none'
+        }}
+      />
       
-      {/* Visual Surround Surround/Spotlight Effect */}
-      {targetRect && isReady && (
-        <div 
-            className="absolute transition-all duration-300 ease-out"
-            style={{
-                top: targetRect.top - 15,
-                left: targetRect.left - 15,
-                width: targetRect.width + 30,
-                height: targetRect.height + 30,
-                boxShadow: '0 0 0 9999px rgba(2, 6, 23, 0.9)', 
-                borderRadius: '24px',
-                border: '4px solid #b08d6a', 
-                zIndex: 10,
-                pointerEvents: 'none'
-            }}
-        >
-            <div className="absolute inset-0 border border-white/20 rounded-[20px] animate-pulse-soft" />
-        </div>
+      {/* Box and Cube Pointer */}
+      {targetRect && (
+        <>
+            <div 
+                className="absolute transition-all duration-500 border-2 border-white rounded-xl shadow-[0_0_50px_rgba(255,255,255,0.3)] z-50"
+                style={{
+                    top: targetRect.top - 8,
+                    left: targetRect.left - 8,
+                    width: targetRect.width + 16,
+                    height: targetRect.height + 16,
+                }}
+            />
+
+            {/* Cube Pointer (Smaller and Precise) */}
+            <div 
+                className="absolute z-[60] transition-all duration-500 flex flex-col items-center gap-1"
+                style={{
+                    top: targetRect.top > 250 ? targetRect.top - 50 : targetRect.bottom + 10,
+                    left: targetRect.left + (targetRect.width / 2) - 14,
+                }}
+            >
+                {targetRect.top > 250 ? (
+                    <div className="flex flex-col items-center animate-bounce">
+                        <div className="w-7 h-7 bg-white rounded-lg flex items-center justify-center text-slate-900 shadow-2xl border border-white">
+                            <Box size={14} />
+                        </div>
+                        <ArrowDown size={16} className="text-white drop-shadow-xl -mt-1" />
+                    </div>
+                ) : (
+                    <div className="flex flex-col items-center animate-bounce">
+                        <ArrowUp size={16} className="text-white drop-shadow-xl mb-0.5" />
+                        <div className="w-7 h-7 bg-white rounded-lg flex items-center justify-center text-slate-900 shadow-2xl border border-white">
+                            <Box size={14} />
+                        </div>
+                    </div>
+                )}
+            </div>
+        </>
       )}
 
+      {/* Nano Description Card */}
       <div 
-        className={`absolute z-30 transition-all duration-500 ease-out pointer-events-auto ${isReady ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-95'}`}
-        style={getTooltipStyle()}
+        className="z-[100] transition-all duration-500 pointer-events-auto"
+        style={getCardPosition() as any}
       >
-        <div className="bg-[#0c1220] p-7 rounded-[2.5rem] shadow-[0_30px_60px_rgba(0,0,0,0.8)] border border-white/10 relative overflow-hidden">
-            <div className="relative z-10">
-                <div className="flex items-center gap-4 mb-5">
-                    <div className="bg-primary-600 text-white w-10 h-10 rounded-2xl flex items-center justify-center text-base font-black italic shrink-0 shadow-lg">
-                        {currentStepIndex + 1}
+        <div className="bg-[#0c1220] p-6 rounded-[2.5rem] shadow-[0_40px_100px_rgba(0,0,0,1)] border border-white/10 relative overflow-hidden group">
+            <div className="absolute -top-12 -right-12 w-32 h-32 bg-primary-500/5 rounded-full blur-3xl" />
+            
+            <div className="relative z-10 space-y-4">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                         <div className="w-8 h-8 bg-slate-900 rounded-xl flex items-center justify-center text-primary-400 border border-white/5 shrink-0">
+                            {currentStep.icon}
+                         </div>
+                         <div>
+                            <span className="text-[7px] font-black uppercase tracking-[0.4em] text-primary-500 block mb-0.5">GUIDE {currentStepIndex + 1}/6</span>
+                            <h3 className="text-xs font-black text-white uppercase tracking-wider">{currentStep.title}</h3>
+                         </div>
                     </div>
-                    <div className="flex-1">
-                      <h3 className="text-base font-black font-serif text-white uppercase tracking-tight italic leading-tight">{currentStep.title}</h3>
-                    </div>
-                    <div className="p-2 bg-white/5 rounded-xl text-slate-500 shrink-0">
-                        {currentStep.icon}
-                    </div>
+                    <button onClick={onComplete} className="text-slate-600 hover:text-white transition-colors p-1"><X size={12} /></button>
                 </div>
-                
-                <p className="text-slate-300 text-[14px] font-medium leading-relaxed mb-6">
-                    {currentStep.description}
+
+                <p className="text-slate-300 text-[10px] font-bold leading-relaxed italic border-l-2 border-primary-500/30 pl-3">
+                    "{currentStep.description}"
                 </p>
 
-                <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4 mb-7 flex items-center gap-4">
-                    <div className="w-10 h-10 bg-emerald-500 rounded-xl flex items-center justify-center text-white shadow-lg shrink-0">
-                      <DollarSign size={18} />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-black uppercase text-emerald-500 tracking-[0.2em] mb-0.5">Quick Fact</p>
-                      <p className="text-[11px] font-bold text-white leading-tight italic">{currentStep.benefit}</p>
-                    </div>
-                </div>
-                
-                <div className="flex flex-col gap-3">
-                    <button 
+                <div className="pt-2 flex flex-col gap-2">
+                     <button 
                         onClick={handleNext}
-                        className="w-full py-5 bg-white hover:bg-primary-500 hover:text-white text-slate-900 rounded-[1.5rem] font-black text-[12px] uppercase tracking-[0.2em] shadow-xl transition-all flex items-center justify-center gap-2 group active:scale-95"
+                        className="w-full py-3 bg-white text-slate-950 rounded-xl font-black text-[9px] uppercase tracking-[0.3em] shadow-lg hover:bg-slate-100 active:scale-95 transition-all flex items-center justify-center gap-2"
                     >
-                        {currentStepIndex === STEPS.length - 1 ? 'Start Saving!' : 'Next Step'} <ChevronRight size={16} />
+                        {currentStepIndex === STEPS.length - 1 ? "Start Now" : "Next Item"} 
+                        <ChevronRight size={12}/>
                     </button>
-                    <button onClick={skipTour} className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 hover:text-rose-500 transition-colors py-2 text-center">Stop the Guide</button>
-                </div>
-
-                <div className="mt-7 flex gap-1.5 justify-center">
-                    {STEPS.map((_, i) => (
-                        <div key={i} className={`h-1.5 rounded-full transition-all duration-500 ${i === currentStepIndex ? 'w-5 bg-primary-500' : 'w-2 bg-slate-800'}`} />
-                    ))}
+                    
+                    <div className="flex justify-center gap-1 pt-1">
+                        {STEPS.map((_, i) => (
+                            <div key={i} className={`h-0.5 rounded-full transition-all duration-300 ${i === currentStepIndex ? 'w-5 bg-primary-500 shadow-[0_0_8px_rgba(176,141,106,0.4)]' : 'w-1 bg-slate-800'}`} />
+                        ))}
+                    </div>
                 </div>
             </div>
         </div>

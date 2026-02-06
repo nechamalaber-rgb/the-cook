@@ -23,6 +23,7 @@ interface CalendarViewProps {
   onAddToShoppingList?: (items: string[]) => void;
   setActiveRecipe?: React.Dispatch<React.SetStateAction<Recipe | null>>;
   onRequireAccess?: (action: string) => boolean;
+  onConsumeGeneration?: () => boolean;
 }
 
 const CalendarView: React.FC<CalendarViewProps> = ({ 
@@ -36,7 +37,8 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   setMealHistory,
   onAddToShoppingList,
   setActiveRecipe,
-  onRequireAccess
+  onRequireAccess,
+  onConsumeGeneration
 }) => {
   const navigate = useNavigate();
   const isKosher = preferences?.isKosher || false;
@@ -148,6 +150,8 @@ const CalendarView: React.FC<CalendarViewProps> = ({
 
   const handleAutoPlan = async () => {
       if (onRequireAccess && !onRequireAccess('To use auto-planning')) return;
+      if (onConsumeGeneration && !onConsumeGeneration()) return; // Check limit
+
       if (!pantryItems.length) return alert("Add items to your inventory first!");
       setIsAutoPlanning(true);
       try {
@@ -177,6 +181,8 @@ const CalendarView: React.FC<CalendarViewProps> = ({
 
   const handleRunGeneration = async () => {
       setIsPlanConfigOpen(false);
+      if (onConsumeGeneration && !onConsumeGeneration()) return; // Check limit
+
       setIsAutoPlanning(true);
       setPlanResult(null);
       try {

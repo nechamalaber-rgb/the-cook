@@ -12,7 +12,7 @@ const PlansView: React.FC<PlansViewProps> = ({ preferences }) => {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
 
   const featureComparison = [
-    { name: "AI Recipe Curation", free: "3 / day", pro: "Unlimited" },
+    { name: "AI Recipe Curation", free: "3 Total Actions", pro: "Unlimited" },
     { name: "Pantry Vision (Scanning)", free: "Basic", pro: "Precision" },
     { name: "Macro-Nutrient Logic", free: "Partial", pro: "Complete" },
     { name: "Shopping List Sync", free: true, pro: true },
