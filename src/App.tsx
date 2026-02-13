@@ -5,7 +5,6 @@ import { Routes, Route, NavLink, useLocation, useNavigate, Navigate } from 'reac
 import { Logo } from '../components/Logo';
 import { Ingredient, ShoppingItem, UserPreferences, Category, Recipe, Pantry, MealLog, RecipeGenerationOptions, Order, OrderStatus } from '../types';
 import SignInView from '../components/SignInView';
-import LandingView from '../components/LandingView';
 import ChefChat from '../components/ChefChat';
 import DashboardView from '../components/DashboardView';
 import PantryView from '../components/PantryView';
@@ -60,7 +59,7 @@ const App: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(() => localStorage.getItem('ks_session_email'));
-  const [showLanding, setShowLanding] = useState(() => !localStorage.getItem('ks_session_email'));
+  
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'signup'>('signup');
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -125,11 +124,11 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const hasSeenWalkthrough = localStorage.getItem('ks_onboarding_final_seen') === 'true';
-    if (!showLanding && !hasSeenWalkthrough && !showWalkthrough && !preferences.onboardingCompleted) {
-        const timer = setTimeout(() => setShowWalkthrough(true), 1500);
+    if (!hasSeenWalkthrough && !showWalkthrough && !preferences.onboardingCompleted) {
+        const timer = setTimeout(() => setShowWalkthrough(true), 1200);
         return () => clearTimeout(timer);
     }
-  }, [showLanding, preferences.onboardingCompleted, showWalkthrough]);
+  }, [preferences.onboardingCompleted, showWalkthrough]);
 
   const activePantry = useMemo(() => {
     return pantries.find(p => p.id === activePantryId) || { id: 'default', name: 'Main Kitchen', items: [] };
@@ -153,7 +152,6 @@ const App: React.FC = () => {
       localStorage.setItem('ks_session_email', normalizedEmail);
       setCurrentUserEmail(normalizedEmail);
       setIsAuthModalOpen(false);
-      setShowLanding(false);
       navigate('/pantry');
       showToast(`Welcome back, ${name}!`);
   };
@@ -161,8 +159,7 @@ const App: React.FC = () => {
   const handleSignOut = () => { 
     localStorage.removeItem('ks_session_email'); 
     setCurrentUserEmail(null); 
-    setShowLanding(true); 
-    navigate('/'); 
+    navigate('/pantry'); 
   };
   
   const setActivePantryItems: React.Dispatch<React.SetStateAction<Ingredient[]>> = (value) => { 
@@ -177,7 +174,7 @@ const App: React.FC = () => {
     setPantries(prev => [...prev, newPantry]); 
     setActivePantryId(newPantry.id); 
   };
-  
+
   const addMissingToShopping = (items: string[]) => { 
     const newItems: ShoppingItem[] = items.map(name => ({
         id: Math.random().toString(),
@@ -244,15 +241,13 @@ const App: React.FC = () => {
     navigate('/shopping');
   };
 
-  // Fix: handleGenerateRecipes now populates the list one-by-one for faster user results.
   const handleGenerateRecipes = async (options: RecipeGenerationOptions) => {
     setIsGeneratingRecipes(true);
-    setGeneratedRecipes([]); // Clear current list to start fresh
+    setGeneratedRecipes([]); 
     const targetCount = options.recipeCount || 4; 
     let currentBatchTitles: string[] = [];
 
     try {
-      // Loop through generation calls to populate one-by-one
       for (let i = 0; i < targetCount; i++) {
           try {
             const recipe = await generateSingleSmartRecipe(activePantry.items, preferences, {
@@ -263,12 +258,10 @@ const App: React.FC = () => {
             
             if (recipe && recipe.title) {
               currentBatchTitles.push(recipe.title);
-              // Update state immediately as each recipe arrives
               setGeneratedRecipes(prev => [...prev, recipe]);
 
-              // Auto-visualize first 2 recipes to make it feel premium
               if (i < 2) {
-                  generateRecipeImage(recipe.title, recipe.ingredients).then(imgData => {
+                  generateRecipeImage(recipe.title, recipe.ingredients, recipe.servings).then(imgData => {
                       if (imgData) {
                           const updatedRecipe = { ...recipe, imageUrl: `data:image/png;base64,${imgData}` };
                           setGeneratedRecipes(prev => prev.map(r => r.id === updatedRecipe.id ? updatedRecipe : r));
@@ -339,47 +332,43 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#090e1a] font-sans flex flex-col overflow-x-hidden">
       <Walkthrough show={showWalkthrough} onComplete={completeWalkthrough} />
-      {showLanding && location.pathname !== '/about' ? (
-        <LandingView onStart={() => {setShowLanding(false); navigate('/pantry');}} onSignIn={() => {setAuthModalMode('signup'); setIsAuthModalOpen(true);}} onSignOut={handleSignOut} currentUser={currentUserEmail} />
-      ) : (
-        <>
-          <header className="fixed top-0 left-0 right-0 h-20 bg-[#090e1a]/90 border-b border-slate-800/50 z-50 flex items-center justify-between px-4 md:px-8 backdrop-blur-xl">
-              <div onClick={() => {setShowLanding(true); navigate('/');}} className="flex items-center gap-2.5 cursor-pointer group shrink-0">
-                <div className="p-1.5 bg-primary-500 rounded-xl text-white group-hover:scale-110 transition-transform shadow-lg"><Logo className="w-7 h-7" /></div>
-                <span className="font-serif font-black text-xl text-white tracking-tighter leading-none hidden sm:inline">Prepzu</span>
-              </div>
-              <nav className="flex items-center gap-1 md:gap-2">
-                  <NavLink to="/pantry" className={({isActive}) => `p-2.5 md:px-4 md:py-2 rounded-xl text-sm font-bold transition-all ${isActive ? 'text-primary-600 bg-slate-900/40 shadow-sm' : 'text-slate-400 hover:text-white'}`}><HomeIcon size={20} className="md:hidden" /><span className="hidden md:inline">Pantry</span></NavLink>
-                  <NavLink to="/studio" className={({isActive}) => `p-2.5 md:px-4 md:py-2 rounded-xl text-sm font-bold transition-all ${isActive ? 'text-primary-600 bg-slate-900/40 shadow-sm' : 'text-slate-400 hover:text-white'}`}><Sparkles size={20} className="md:hidden" /><span className="hidden md:inline">Recipes</span></NavLink>
-                  <NavLink to="/calendar" className={({isActive}) => `p-2.5 md:px-4 md:py-2 rounded-xl text-sm font-bold transition-all ${isActive ? 'text-primary-600 bg-slate-900/40 shadow-sm' : 'text-slate-400 hover:text-white'}`}><CalendarIcon size={20} className="md:hidden" /><span className="hidden md:inline">Planner</span></NavLink>
-                  <NavLink to="/shopping" className={({isActive}) => `p-2.5 md:px-4 md:py-2 rounded-xl text-sm font-bold transition-all ${isActive ? 'text-primary-600 bg-slate-900/40 shadow-sm' : 'text-slate-400 hover:text-white'}`}><ShoppingBag size={20} className="md:hidden" /><span className="hidden md:inline">Cart</span></NavLink>
-              </nav>
-              <div className="flex items-center gap-2 md:gap-3 shrink-0">
-                  {currentUserEmail && (
-                    <NavLink to="/settings" className={({isActive}) => `p-2.5 rounded-xl transition-all ${isActive ? 'text-primary-600 bg-slate-900/40' : 'text-slate-400'}`}><Settings size={20} /></NavLink>
-                  )}
-                  {!currentUserEmail && (
-                    <button onClick={() => { setAuthModalMode('signup'); setIsAuthModalOpen(true); }} className="flex items-center gap-2 px-5 py-2 bg-primary-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg hover:scale-105 transition-all whitespace-nowrap"><UserPlus size={14} /> Join Free</button>
-                  )}
-              </div>
-          </header>
-          <main className="max-w-7xl mx-auto px-4 pb-4 md:px-6 md:pb-6 lg:px-12 pt-32 flex-1 w-full flex flex-col relative animate-fade-in">
-            <Routes>
-                <Route path="/" element={<Navigate to="/pantry" replace />} />
-                <Route path="/pantry" element={<PantryView pantries={pantries} activePantryId={activePantryId} setActivePantryId={setActivePantryId} onAddPantry={handleAddPantry} items={activePantry.items} setItems={setActivePantryItems} onConsumeGeneration={handleConsumeGeneration} />} />
-                <Route path="/studio" element={<DashboardView pantryItems={activePantry.items} mealHistory={mealHistory} preferences={preferences} setPreferences={setPreferences} savedRecipes={savedRecipes} generatedRecipes={generatedRecipes} setGeneratedRecipes={setGeneratedRecipes} onLogMeal={handleLogMeal} onScheduleMeal={handleScheduleMeal} setActiveRecipe={setActiveRecipe} onToggleSave={handleToggleSave} isGenerating={isGeneratingRecipes} onGenerate={handleGenerateRecipes} onCancelGeneration={() => setIsGeneratingRecipes(false)} onRequireAccess={(a) => !!currentUserEmail} onAddRecipe={(r) => setSavedRecipes(prev => [r, ...prev])} onAddToShoppingList={addMissingToShopping} onConsumeGeneration={handleConsumeGeneration} />} />
-                <Route path="/calendar" element={<CalendarView mealHistory={mealHistory} savedRecipes={savedRecipes} preferences={preferences} pantryItems={activePantry.items} onScheduleMeal={handleScheduleMeal} setMealHistory={setMealHistory} onUpdateMealStatus={(id, status) => setMealHistory(prev => prev.map(m => m.id === id ? {...m, status} : m))} onDeleteMealLog={(id) => setMealHistory(prev => prev.filter(m => m.id !== id))} onAddToShoppingList={addMissingToShopping} setActiveRecipe={setActiveRecipe} onRequireAccess={(a) => !!currentUserEmail} onConsumeGeneration={handleConsumeGeneration} />} />
-                <Route path="/recipes" element={<RecipeView pantryItems={activePantry.items} setPantryItems={setActivePantryItems} preferences={preferences} onAddToShoppingList={addMissingToShopping} savedRecipes={savedRecipes} onToggleSave={handleToggleSave} mealHistory={mealHistory} onLogMeal={handleLogMeal} selectedRecipe={activeRecipe} setSelectedRecipe={setActiveRecipe} cookingMode={isCookingMode} setCookingMode={setIsCookingMode} currentStep={cookingStep} setCurrentStep={setCookingStep} activeTab={recipeTab} setActiveTab={setRecipeTab} onScheduleMeal={handleScheduleMeal} generatedRecipes={generatedRecipes} setGeneratedRecipes={setGeneratedRecipes} onUpdateRecipe={handleUpdateRecipe} />} />
-                <Route path="/shopping" element={<ShoppingListView items={shoppingList} setItems={setShoppingList} orderHistory={orderHistory} onPlaceOrder={handleCompleteOrder} onReorder={handleReorder} onUpdateOrderStatus={handleUpdateOrderStatus} pantryItems={activePantry.items} preferences={preferences} mealHistory={mealHistory} onRequireAccess={(a) => !!currentUserEmail} onSaveConcept={handleUpdateRecipe as any} onSavePastOrder={(o) => setOrderHistory(prev => [o, ...prev])} onScheduleMeal={handleScheduleMeal} onConsumeGeneration={handleConsumeGeneration} />} />
-                <Route path="/settings" element={<SettingsView preferences={preferences} setPreferences={setPreferences} mealHistory={mealHistory} pantries={pantries} setPantries={setPantries} onSignOut={handleSignOut} onGoToLanding={() => setShowLanding(true)} showToast={showToast} />} />
-                <Route path="/about" element={<AboutView />} />
-                <Route path="/plans" element={<PlansView preferences={preferences} />} />
-            </Routes>
-          </main>
-          <button onClick={() => setIsChatOpen(true)} className="fixed bottom-6 right-6 z-[100] p-3.5 bg-white text-slate-900 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all border-4 border-slate-950"><MessageSquarePlus size={22} /></button>
-          <ChefChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} pantryItems={activePantry.items} activeRecipe={activeRecipe} />
-        </>
-      )}
+      
+      <header className="fixed top-0 left-0 right-0 h-20 bg-[#090e1a]/90 border-b border-slate-800/50 z-[100] flex items-center justify-between px-4 md:px-8 backdrop-blur-xl">
+          <div onClick={() => navigate('/pantry')} className="flex items-center gap-2.5 cursor-pointer group shrink-0">
+            <div className="p-1.5 bg-primary-500 rounded-xl text-white group-hover:scale-110 transition-transform shadow-lg"><Logo className="w-7 h-7" /></div>
+            <span className="font-serif font-black text-xl text-white tracking-tighter leading-none hidden sm:inline">Prepzu</span>
+          </div>
+          <nav className="flex items-center gap-1 md:gap-2">
+              <NavLink to="/pantry" id="nav-inventory" className={({isActive}) => `p-2.5 md:px-4 md:py-2 rounded-xl text-sm font-bold transition-all ${isActive ? 'text-primary-600 bg-slate-900/40 shadow-sm' : 'text-slate-400 hover:text-white'}`}><HomeIcon size={20} className="md:hidden" /><span className="hidden md:inline">Pantry</span></NavLink>
+              <NavLink to="/studio" id="nav-studio" className={({isActive}) => `p-2.5 md:px-4 md:py-2 rounded-xl text-sm font-bold transition-all ${isActive ? 'text-primary-600 bg-slate-900/40 shadow-sm' : 'text-slate-400 hover:text-white'}`}><Sparkles size={20} className="md:hidden" /><span className="hidden md:inline">Recipes</span></NavLink>
+              <NavLink to="/calendar" id="nav-calendar" className={({isActive}) => `p-2.5 md:px-4 md:py-2 rounded-xl text-sm font-bold transition-all ${isActive ? 'text-primary-600 bg-slate-900/40 shadow-sm' : 'text-slate-400 hover:text-white'}`}><CalendarIcon size={20} className="md:hidden" /><span className="hidden md:inline">Planner</span></NavLink>
+              <NavLink to="/shopping" id="nav-cart" className={({isActive}) => `p-2.5 md:px-4 md:py-2 rounded-xl text-sm font-bold transition-all ${isActive ? 'text-primary-600 bg-slate-900/40 shadow-sm' : 'text-slate-400 hover:text-white'}`}><ShoppingBag size={20} className="md:hidden" /><span className="hidden md:inline">Cart</span></NavLink>
+          </nav>
+          <div className="flex items-center gap-2 md:gap-3 shrink-0">
+              {currentUserEmail ? (
+                <NavLink to="/settings" id="nav-settings" className={({isActive}) => `p-2.5 rounded-xl transition-all ${isActive ? 'text-primary-600 bg-slate-900/40' : 'text-slate-400'}`}><Settings size={20} /></NavLink>
+              ) : (
+                <button id="nav-signup-btn" onClick={() => { setAuthModalMode('signup'); setIsAuthModalOpen(true); }} className="flex items-center gap-2 px-5 py-2 bg-primary-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg hover:scale-105 transition-all whitespace-nowrap"><UserPlus size={14} /> Join Free</button>
+              )}
+          </div>
+      </header>
+      
+      <main className="max-w-7xl mx-auto px-4 pb-4 md:px-6 md:pb-6 lg:px-12 pt-32 flex-1 w-full flex flex-col relative animate-fade-in">
+        <Routes>
+            <Route path="/" element={<Navigate to="/pantry" replace />} />
+            <Route path="/pantry" element={<PantryView pantries={pantries} activePantryId={activePantryId} setActivePantryId={setActivePantryId} onAddPantry={handleAddPantry} items={activePantry.items} setItems={setActivePantryItems} onConsumeGeneration={handleConsumeGeneration} />} />
+            <Route path="/studio" element={<DashboardView pantryItems={activePantry.items} mealHistory={mealHistory} preferences={preferences} setPreferences={setPreferences} savedRecipes={savedRecipes} generatedRecipes={generatedRecipes} setGeneratedRecipes={setGeneratedRecipes} onLogMeal={handleLogMeal} onScheduleMeal={handleScheduleMeal} setActiveRecipe={setActiveRecipe} onToggleSave={handleToggleSave} isGenerating={isGeneratingRecipes} onGenerate={handleGenerateRecipes} onCancelGeneration={() => setIsGeneratingRecipes(false)} onRequireAccess={(a) => !!currentUserEmail} onAddRecipe={(r) => setSavedRecipes(prev => [r, ...prev])} onAddToShoppingList={addMissingToShopping} onConsumeGeneration={handleConsumeGeneration} />} />
+            <Route path="/calendar" element={<CalendarView mealHistory={mealHistory} savedRecipes={savedRecipes} preferences={preferences} pantryItems={activePantry.items} onScheduleMeal={handleScheduleMeal} setMealHistory={setMealHistory} onUpdateMealStatus={(id, status) => setMealHistory(prev => prev.map(m => m.id === id ? {...m, status} : m))} onDeleteMealLog={(id) => setMealHistory(prev => prev.filter(m => m.id !== id))} onAddToShoppingList={addMissingToShopping} setActiveRecipe={setActiveRecipe} onRequireAccess={(a) => !!currentUserEmail} onConsumeGeneration={handleConsumeGeneration} />} />
+            <Route path="/recipes" element={<RecipeView pantryItems={activePantry.items} setPantryItems={setActivePantryItems} preferences={preferences} onAddToShoppingList={addMissingToShopping} savedRecipes={savedRecipes} onToggleSave={handleToggleSave} mealHistory={mealHistory} onLogMeal={handleLogMeal} selectedRecipe={activeRecipe} setSelectedRecipe={setActiveRecipe} cookingMode={isCookingMode} setCookingMode={setIsCookingMode} currentStep={cookingStep} setCurrentStep={setCookingStep} activeTab={recipeTab} setActiveTab={setRecipeTab} onScheduleMeal={handleScheduleMeal} generatedRecipes={generatedRecipes} setGeneratedRecipes={setGeneratedRecipes} onUpdateRecipe={handleUpdateRecipe} />} />
+            <Route path="/shopping" element={<ShoppingListView items={shoppingList} setItems={setShoppingList} orderHistory={orderHistory} onPlaceOrder={handleCompleteOrder} onReorder={handleReorder} onUpdateOrderStatus={handleUpdateOrderStatus} pantryItems={activePantry.items} preferences={preferences} mealHistory={mealHistory} onRequireAccess={(a) => !!currentUserEmail} onSaveConcept={handleUpdateRecipe as any} onSavePastOrder={(o) => setOrderHistory(prev => [o, ...prev])} onScheduleMeal={handleScheduleMeal} onConsumeGeneration={handleConsumeGeneration} />} />
+            <Route path="/settings" element={<SettingsView preferences={preferences} setPreferences={setPreferences} mealHistory={mealHistory} pantries={pantries} setPantries={setPantries} onSignOut={handleSignOut} onGoToLanding={() => {}} showToast={showToast} />} />
+            <Route path="/about" element={<AboutView />} />
+            <Route path="/plans" element={<PlansView preferences={preferences} />} />
+        </Routes>
+      </main>
+      
+      <button onClick={() => setIsChatOpen(true)} className="fixed bottom-6 right-6 z-[100] p-3.5 bg-white text-slate-900 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all border-4 border-slate-950"><MessageSquarePlus size={22} /></button>
+      <ChefChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} pantryItems={activePantry.items} activeRecipe={activeRecipe} />
 
       {isAuthModalOpen && (
         <SignInView isModal initialMode={authModalMode} onClose={() => setIsAuthModalOpen(false)} onSignIn={(name, email) => handleSignIn(name, email)} />

@@ -1,15 +1,14 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MealLog, Recipe, UserPreferences, Ingredient } from '../types';
 import { 
   ChevronLeft, ChevronRight, Clock, Flame, Utensils, 
   Coffee, Sun, Moon, Sunset, CheckCircle, 
   Trash2, X, TrendingUp, Plus,
-  Wand2, PieChart, Loader2, Sparkles, ScrollText, Calendar, ShoppingCart, ArrowRight, Beef, Milk, Scale, User, Wallet, Timer
+  Wand2, PieChart, Loader2, Sparkles, ScrollText, Calendar, ShoppingCart, ArrowRight, Beef, Milk, Scale, User, Wallet, Timer, Camera
 } from 'lucide-react';
-// Corrected import: replaced generateSmartRecipes with generateSingleSmartRecipe
-import { generateWeeklyPlan, estimateMealCalories, generateKosherWeeklyPlan, generateSingleSmartRecipe } from '../services/geminiService';
+import { generateWeeklyPlan, estimateMealCalories, generateKosherWeeklyPlan, generateSingleSmartRecipe, analyzeMealFromImage } from '../services/geminiService';
 
 interface CalendarViewProps {
   mealHistory: MealLog[];
@@ -69,6 +68,9 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   const [customMealCalories, setCustomMealCalories] = useState<string>('');
   const [customMealDate, setCustomMealDate] = useState(new Date().toISOString().split('T')[0]);
   const [customMealType, setCustomMealType] = useState('Dinner');
+  const [isScanningMeal, setIsScanningMeal] = useState(false);
+  const scanInputRef = useRef<HTMLInputElement>(null);
+  const dashboardScanRef = useRef<HTMLInputElement>(null);
 
   const dateStr = selectedDate.toISOString().split('T')[0];
 
@@ -120,7 +122,6 @@ const CalendarView: React.FC<CalendarViewProps> = ({
       }
 
       try {
-          // Corrected call: use generateSingleSmartRecipe and handle single return object
           const recipe = await generateSingleSmartRecipe(pantryItems, preferences || {} as UserPreferences, {
               customRequest: `Generate a detailed recipe for: ${meal.recipeTitle}. Must be around ${meal.calories || 450} calories.`,
               recipeCount: 1,
@@ -150,7 +151,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
 
   const handleAutoPlan = async () => {
       if (onRequireAccess && !onRequireAccess('To use auto-planning')) return;
-      if (onConsumeGeneration && !onConsumeGeneration()) return; // Check limit
+      if (onConsumeGeneration && !onConsumeGeneration()) return; 
 
       if (!pantryItems.length) return alert("Add items to your inventory first!");
       setIsAutoPlanning(true);
@@ -181,7 +182,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
 
   const handleRunGeneration = async () => {
       setIsPlanConfigOpen(false);
-      if (onConsumeGeneration && !onConsumeGeneration()) return; // Check limit
+      if (onConsumeGeneration && !onConsumeGeneration()) return; 
 
       setIsAutoPlanning(true);
       setPlanResult(null);
@@ -241,6 +242,34 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     }
   };
 
+  const handleScanMeal = async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      if (onRequireAccess && !onRequireAccess('To scan meals')) return;
+      if (onConsumeGeneration && !onConsumeGeneration()) return;
+
+      setIsScanningMeal(true);
+      try {
+          const reader = new FileReader();
+          const base64Data = await new Promise<string>((res) => {
+              reader.onload = () => res((reader.result as string).split(',')[1]);
+              reader.readAsDataURL(file);
+          });
+          
+          const result = await analyzeMealFromImage(base64Data, file.type);
+          if (result) {
+              if (result.name) setCustomMealName(result.name);
+              if (result.calories) setCustomMealCalories(result.calories.toString());
+              if (result.mealType) setCustomMealType(result.mealType);
+          }
+      } catch (err) {
+          console.error("Scan failed", err);
+          alert("Could not analyze meal image. Please try again.");
+      } finally {
+          setIsScanningMeal(false);
+      }
+  };
+
   const getMealIcon = (type: string) => {
       switch (type) {
           case 'Breakfast': return <Coffee size={18} />;
@@ -266,6 +295,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
         
         <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
             <button 
+                id="planner-generate-btn"
                 onClick={handleInitiatePlan}
                 disabled={isAutoPlanning}
                 className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-indigo-500 text-white px-6 py-4 rounded-2xl font-black shadow-xl hover:bg-indigo-600 transition-all text-[10px] uppercase tracking-widest"
@@ -395,7 +425,26 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                           </p>
                       </div>
                       <div className="flex gap-2">
-                          <button onClick={() => setIsAddMealModalOpen(true)} className="p-3 bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-primary-600 rounded-2xl transition-all shadow-sm"><Plus size={20}/></button>
+                          <button 
+                              onClick={() => dashboardScanRef.current?.click()} 
+                              className="group flex items-center gap-3 px-5 py-3 bg-white dark:bg-slate-800 text-slate-400 hover:text-white hover:bg-indigo-500 rounded-2xl transition-all shadow-sm border border-slate-200 dark:border-slate-700 hover:border-indigo-500"
+                              title="Scan your meal to log calories instantly"
+                          >
+                              <Camera size={20} className="group-hover:scale-110 transition-transform" />
+                              <span className="hidden md:inline font-black text-[10px] uppercase tracking-widest">Scan Meal</span>
+                              <input 
+                                  type="file" 
+                                  ref={dashboardScanRef} 
+                                  className="hidden" 
+                                  accept="image/*" 
+                                  capture="environment"
+                                  onChange={(e) => {
+                                      setIsAddMealModalOpen(true);
+                                      handleScanMeal(e);
+                                  }}
+                              />
+                          </button>
+                          <button onClick={() => setIsAddMealModalOpen(true)} className="p-3 bg-slate-50 dark:bg-slate-800 text-slate-400 hover:text-primary-600 rounded-2xl transition-all shadow-sm border border-slate-200 dark:border-slate-700"><Plus size={20}/></button>
                       </div>
                   </div>
 
@@ -674,17 +723,34 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                                 type="text" 
                                 value={customMealName} 
                                 onChange={e => setCustomMealName(e.target.value)} 
-                                className="w-full bg-slate-50 dark:bg-slate-800 p-6 rounded-2xl outline-none border border-slate-200 dark:border-slate-700 font-bold dark:text-white focus:border-primary-500 text-lg pr-14" 
+                                className="w-full bg-slate-50 dark:bg-slate-800 p-6 rounded-2xl outline-none border border-slate-200 dark:border-slate-700 font-bold dark:text-white focus:border-primary-500 text-lg pr-24" 
                                 placeholder="e.g. 3 large eggs, half avocado" 
                             />
-                            <button 
-                                onClick={handleCalculateCalories}
-                                disabled={isCalculatingCalories || !customMealName.trim()}
-                                className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-primary-100 dark:bg-primary-900/30 text-primary-600 rounded-xl hover:bg-primary-600 hover:text-white transition-all disabled:opacity-30"
-                                title="AI Calorie Estimation"
-                            >
-                                {isCalculatingCalories ? <Loader2 size={20} className="animate-spin" /> : <Sparkles size={20} />}
-                            </button>
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                                <button 
+                                    onClick={() => scanInputRef.current?.click()}
+                                    className="p-2 bg-slate-100 dark:bg-slate-700 text-slate-500 hover:text-white hover:bg-primary-500 rounded-xl transition-all"
+                                    title="Scan Meal"
+                                >
+                                    {isScanningMeal ? <Loader2 size={18} className="animate-spin" /> : <Camera size={18} />}
+                                    <input 
+                                        type="file" 
+                                        ref={scanInputRef} 
+                                        className="hidden" 
+                                        accept="image/*" 
+                                        capture="environment"
+                                        onChange={handleScanMeal}
+                                    />
+                                </button>
+                                <button 
+                                    onClick={handleCalculateCalories}
+                                    disabled={isCalculatingCalories || !customMealName.trim()}
+                                    className="p-2 bg-primary-100 dark:bg-primary-900/30 text-primary-600 rounded-xl hover:bg-primary-600 hover:text-white transition-all disabled:opacity-30"
+                                    title="AI Calorie Estimation"
+                                >
+                                    {isCalculatingCalories ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
+                                </button>
+                            </div>
                           </div>
                       </div>
                       <div className="grid grid-cols-2 gap-6">

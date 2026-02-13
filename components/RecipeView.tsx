@@ -6,8 +6,7 @@ import {
   MessageSquare, ShieldCheck, Dumbbell, Zap, Activity, Quote,
   Beaker, ChevronLeft, ChefHat, Info, Target, Thermometer, Timer, CheckSquare,
   Cpu, Layers, ZapOff, Fingerprint, SearchCheck, ExternalLink, Globe, AlertOctagon, Lightbulb, Users, AlertTriangle, ShoppingCart, Calendar as CalendarIcon,
-  Image as ImageIcon,
-  Calendar
+  Image as ImageIcon
 } from 'lucide-react';
 import { Ingredient, Recipe, UserPreferences, MealLog, Category, Review } from '../types';
 import { generateRecipeImage } from '../services/geminiService';
@@ -88,8 +87,9 @@ const RecipeView: React.FC<RecipeViewProps> = ({
   const navigate = useNavigate();
   const [updatingInventory, setUpdatingInventory] = useState(false);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [userRating, setUserRating] = useState(5);
+  const [userComment, setUserComment] = useState('');
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
-  
   const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false);
   const [scheduleDate, setScheduleDate] = useState(new Date().toISOString().split('T')[0]);
   const [scheduleType, setScheduleType] = useState('Dinner');
@@ -98,7 +98,8 @@ const RecipeView: React.FC<RecipeViewProps> = ({
       if (!selectedRecipe || isGeneratingImage) return;
       setIsGeneratingImage(true);
       try {
-          const imgData = await generateRecipeImage(selectedRecipe.title, selectedRecipe.ingredients);
+          // Pass the servings count to the image generation service
+          const imgData = await generateRecipeImage(selectedRecipe.title, selectedRecipe.ingredients, selectedRecipe.servings);
           if (imgData && onUpdateRecipe) {
               const fullData = `data:image/png;base64,${imgData}`;
               onUpdateRecipe(selectedRecipe.id, { imageUrl: fullData });
@@ -226,15 +227,15 @@ const RecipeView: React.FC<RecipeViewProps> = ({
                                 <Flame size={16} className="text-rose-400" /> {selectedRecipe.calories} KCAL
                             </div>
                             <div className="flex items-center gap-2 md:gap-3 bg-white/10 border border-white/10 px-4 md:px-6 py-2 md:py-3 rounded-2xl backdrop-blur-3xl text-[10px] md:text-xs font-black uppercase text-white">
-                                <Users size={16} className="text-sky-400" /> {selectedRecipe.servings || 2} PERSONS
+                                <Users size={16} className="text-sky-400" /> {selectedRecipe.servings} PPL
                             </div>
                         </div>
                         <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
                             <button onClick={() => setCookingMode(true)} className="flex-1 max-w-[280px] py-4 md:py-5 bg-primary-600 text-white rounded-[1.5rem] md:rounded-[1.8rem] font-black text-[10px] md:text-[11px] uppercase tracking-[0.3em] shadow-2xl flex items-center justify-center gap-3 hover:bg-primary-500 transition-all active:scale-95">
                                 <Play fill="currentColor" size={16} /> COOK DISH
                             </button>
-                            <button onClick={() => setIsScheduleModalOpen(true)} className="px-6 md:px-8 py-4 md:py-5 bg-white/10 text-white border border-white/10 rounded-[1.5rem] md:rounded-[1.8rem] font-black text-[10px] md:text-[11px] uppercase tracking-[0.3em] flex items-center justify-center gap-3 hover:bg-white/20 transition-all">
-                                <CalendarIcon size={16} /> ADD TO PLANNER
+                            <button onClick={() => setIsScheduleModalOpen(true)} className="px-6 md:px-8 py-4 md:py-5 bg-white/5 border border-white/10 rounded-[1.5rem] md:rounded-[1.8rem] font-black text-[10px] md:text-[11px] uppercase tracking-[0.3em] text-white hover:bg-white/10 transition-all flex items-center gap-2">
+                                <CalendarIcon size={16} /> SCHEDULE
                             </button>
                             <button onClick={() => onToggleSave(selectedRecipe)} className={`px-6 md:px-8 py-4 md:py-5 rounded-[1.5rem] md:rounded-[1.8rem] font-black text-[10px] md:text-[11px] uppercase tracking-[0.3em] border-2 transition-all ${savedRecipes.some(r => r.id === selectedRecipe.id) ? 'bg-white text-rose-600 border-white shadow-xl' : 'bg-white/5 text-white border-white/10 hover:bg-white/10'}`}>
                                 {savedRecipes.some(r => r.id === selectedRecipe.id) ? 'SAVED' : 'SAVE RECIPE'}
@@ -244,12 +245,55 @@ const RecipeView: React.FC<RecipeViewProps> = ({
                 </div>
             </div>
 
+            {/* SCHEDULE MODAL */}
+            {isScheduleModalOpen && (
+              <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 animate-fade-in">
+                  <div className="bg-[#0c1220] w-full max-w-sm rounded-[2.5rem] p-8 border border-white/10 shadow-2xl animate-slide-up">
+                      <div className="flex justify-between items-center mb-6">
+                          <h3 className="text-xl font-black font-serif text-white">Schedule Meal</h3>
+                          <button onClick={() => setIsScheduleModalOpen(false)} className="text-slate-400 hover:text-white"><X size={20}/></button>
+                      </div>
+                      <div className="space-y-4 mb-8">
+                          <p className="text-sm font-bold text-primary-400 italic">"{selectedRecipe.title}"</p>
+                          <div>
+                              <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2 block">Date</label>
+                              <input 
+                                  type="date" 
+                                  value={scheduleDate} 
+                                  onChange={e => setScheduleDate(e.target.value)}
+                                  className="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-white text-sm font-bold outline-none focus:border-primary-500"
+                              />
+                          </div>
+                          <div>
+                              <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2 block">Meal Type</label>
+                              <select 
+                                  value={scheduleType} 
+                                  onChange={e => setScheduleType(e.target.value)}
+                                  className="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-white text-sm font-bold outline-none focus:border-primary-500"
+                              >
+                                  <option>Breakfast</option>
+                                  <option>Lunch</option>
+                                  <option>Dinner</option>
+                                  <option>Snack</option>
+                              </select>
+                          </div>
+                      </div>
+                      <button 
+                          onClick={handleConfirmSchedule}
+                          className="w-full py-4 bg-primary-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] shadow-lg hover:scale-[1.02] active:scale-95 transition-all"
+                      >
+                          Add to Calendar
+                      </button>
+                  </div>
+              </div>
+            )}
+
             {missingItems.length > 0 && (
                 <div className="max-w-7xl mx-auto px-4 mt-8 animate-slide-up">
                     <div className="bg-rose-500/10 border-2 border-rose-500/30 rounded-[2rem] p-6 md:p-10 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl">
                         <div className="flex items-center gap-6">
                             <div className="w-12 h-12 md:w-16 md:h-16 bg-rose-500 rounded-2xl flex items-center justify-center text-white shrink-0">
-                                <AlertTriangle size={24} />
+                                <AlertTriangle size={24} className="md:w-8 md:h-8" />
                             </div>
                             <div>
                                 <h4 className="text-lg md:text-xl font-black font-serif italic text-white uppercase tracking-tight leading-none mb-2">Inventory Alert</h4>
@@ -265,35 +309,6 @@ const RecipeView: React.FC<RecipeViewProps> = ({
                 </div>
             )}
 
-            {isScheduleModalOpen && (
-                <div className="fixed inset-0 z-[250] flex items-center justify-center bg-slate-950/90 backdrop-blur-xl p-4 animate-fade-in">
-                    <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-[3rem] p-10 md:p-14 shadow-2xl border border-slate-200 dark:border-slate-800 animate-slide-up">
-                        <div className="flex justify-between items-center mb-8">
-                            <h2 className="text-3xl font-black font-serif text-slate-900 dark:text-white italic">Plan Meal</h2>
-                            <button onClick={() => setIsScheduleModalOpen(false)} className="p-2 text-slate-400 hover:text-rose-500"><X size={32}/></button>
-                        </div>
-                        <div className="space-y-8">
-                            <div className="space-y-3">
-                                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Select Date</label>
-                                <input type="date" value={scheduleDate} onChange={(e) => setScheduleDate(e.target.value)} className="w-full bg-slate-50 dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 font-bold dark:text-white outline-none focus:border-primary-500 transition-all" />
-                            </div>
-                            <div className="space-y-3">
-                                <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Meal Type</label>
-                                <div className="grid grid-cols-2 gap-3">
-                                    {['Lunch', 'Dinner'].map(t => (
-                                        <button key={t} onClick={() => setScheduleType(t)} className={`py-4 rounded-xl font-black text-[10px] uppercase tracking-widest border transition-all ${scheduleType === t ? 'bg-primary-500 text-white border-primary-500 shadow-lg' : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500'}`}>{t}</button>
-                                    ))}
-                                </div>
-                            </div>
-                            <div className="pt-6 flex gap-4">
-                                <button onClick={() => setIsScheduleModalOpen(false)} className="flex-1 py-4 bg-slate-100 dark:bg-slate-800 text-slate-400 rounded-2xl font-black text-[10px] uppercase tracking-widest">Cancel</button>
-                                <button onClick={handleConfirmSchedule} className="flex-[2] py-4 bg-primary-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl hover:bg-primary-500 active:scale-95 transition-all">Establish Plan</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 max-w-7xl mx-auto px-4">
                 <div className="lg:col-span-8 space-y-16">
                     <section className="space-y-8">
@@ -304,7 +319,7 @@ const RecipeView: React.FC<RecipeViewProps> = ({
                             {ingredients.map((ing, i) => (
                                 <div key={i} className="p-5 rounded-2xl md:rounded-3xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 flex items-center gap-4 group transition-all">
                                     <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-primary-500 group-hover:scale-110 transition-transform shrink-0">
-                                        <Target size={16} />
+                                        <Target size={16} className="md:w-[18px] md:h-[18px]" />
                                     </div>
                                     <span className="text-sm font-black text-slate-900 dark:text-white italic tracking-tight leading-snug">{formatFractions(ing)}</span>
                                 </div>
@@ -333,24 +348,9 @@ const RecipeView: React.FC<RecipeViewProps> = ({
                     <div className="bg-slate-900 rounded-[2.5rem] md:rounded-[3rem] p-6 md:p-8 text-white sticky top-32 border border-white/5 shadow-2xl">
                         <h4 className="text-[10px] md:text-[11px] font-black uppercase tracking-[0.4em] text-primary-400 mb-6 md:mb-8 border-b border-white/5 pb-4">Meal Logic</h4>
                         <div className="space-y-6 md:space-y-8">
-                            <div className="flex justify-between items-center bg-white/5 p-4 rounded-2xl border border-white/5">
-                                <div>
-                                    <h5 className="text-[8px] font-black uppercase text-slate-500 mb-1 tracking-[0.2em]">Servings</h5>
-                                    <p className="text-lg font-black font-serif italic text-white uppercase">{selectedRecipe.servings || 2} Persons</p>
-                                </div>
-                                <div className="p-3 bg-sky-500/10 text-sky-400 rounded-xl">
-                                    <Users size={20} />
-                                </div>
-                            </div>
-
-                            <div className="flex justify-between items-center bg-white/5 p-4 rounded-2xl border border-white/5">
-                                <div>
-                                    <h5 className="text-[8px] font-black uppercase text-slate-500 mb-1 tracking-[0.2em]">Energy</h5>
-                                    <p className="text-lg font-black font-serif italic text-white uppercase">{selectedRecipe.calories || 500} KCAL</p>
-                                </div>
-                                <div className="p-3 bg-rose-500/10 text-rose-400 rounded-xl">
-                                    <Flame size={20} />
-                                </div>
+                            <div>
+                                <h5 className="text-[8px] md:text-[9px] font-black uppercase text-slate-500 mb-2 tracking-[0.2em]">Complexity</h5>
+                                <p className="text-xl md:text-2xl font-black font-serif italic uppercase text-white">{selectedRecipe.difficulty}</p>
                             </div>
                             
                             {tips.length > 0 && (

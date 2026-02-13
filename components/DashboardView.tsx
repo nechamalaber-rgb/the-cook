@@ -20,7 +20,9 @@ import {
   Database,
   Zap,
   Minus,
-  Plus
+  Plus,
+  Calendar as CalendarIcon,
+  X
 } from 'lucide-react';
 import { Ingredient, Recipe, UserPreferences, MealLog, RecipeGenerationOptions } from '../types';
 import { analyzePantryStatus, generateRecipeImage } from '../services/geminiService';
@@ -58,13 +60,19 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   isGenerating,
   onGenerate,
   onRequireAccess,
-  onConsumeGeneration
+  onConsumeGeneration,
+  onScheduleMeal
 }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'discover' | 'saved'>('discover');
   const [pantryInsight, setPantryInsight] = useState<{ tip: string; urgency: 'low' | 'medium' | 'high' } | null>(null);
   const [isLoadingInsight, setIsLoadingInsight] = useState(false);
   
+  // Scheduling State
+  const [schedulingRecipe, setSchedulingRecipe] = useState<Recipe | null>(null);
+  const [scheduleDate, setScheduleDate] = useState(new Date().toISOString().split('T')[0]);
+  const [scheduleType, setScheduleType] = useState('Dinner');
+
   // Track specific rendering recipes for technical telemetry overlay
   const [generatingImages, setGeneratingImages] = useState<Set<string>>(new Set());
 
@@ -83,7 +91,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   }, [pantryItems.length]);
 
   const [genOptions, setGenOptions] = useState<RecipeGenerationOptions>({
-    servings: 2, // Hard-forced for requested precision
+    servings: preferences.householdSize || 2,
     mealType: 'Any',
     maxTime: 'Any',
     customRequest: '',
@@ -115,7 +123,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
       
       setGeneratingImages(prev => new Set(prev).add(recipe.id));
       try {
-          const imgData = await generateRecipeImage(recipe.title, recipe.ingredients);
+          const imgData = await generateRecipeImage(recipe.title, recipe.ingredients, recipe.servings);
           if (imgData) {
               setGeneratedRecipes(prev => prev.map(r => r.id === recipe.id ? { ...r, imageUrl: `data:image/png;base64,${imgData}` } : r));
           }
@@ -143,6 +151,18 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                 : [...current, name]
         };
     });
+  };
+
+  const openScheduleModal = (e: React.MouseEvent, recipe: Recipe) => {
+      e.stopPropagation();
+      setSchedulingRecipe(recipe);
+  };
+
+  const handleConfirmSchedule = () => {
+      if (schedulingRecipe) {
+          onScheduleMeal(schedulingRecipe, scheduleDate, scheduleType);
+          setSchedulingRecipe(null);
+      }
   };
 
   return (
@@ -190,13 +210,13 @@ const DashboardView: React.FC<DashboardViewProps> = ({
 
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8">
                       <div className="lg:col-span-7 space-y-8">
-                           <div className="space-y-4">
+                           <div id="studio-request-box" className="space-y-4">
                                <label className="text-[10px] font-black uppercase tracking-[0.4em] block text-primary-400 italic">I want to cook...</label>
                                <div className="relative">
                                   <textarea 
                                     value={genOptions.customRequest || ''} 
                                     onChange={(e) => setGenOptions({...genOptions, customRequest: e.target.value})} 
-                                    placeholder="e.g. 'Pasta with white sauce' or 'Something with chicken'..." 
+                                    placeholder="e.g. 'Pasta with white sauce', 'Spicy chicken', or 'Chocolate chip cookies (don't use my ingredients)'..." 
                                     className="w-full bg-slate-900 border border-white/10 rounded-[2rem] p-6 outline-none font-black text-white h-32 resize-none text-base focus:border-primary-500 transition-all shadow-inner placeholder:text-slate-700" 
                                   />
                                   <div className="absolute bottom-4 right-6 flex items-center gap-2 text-[8px] font-black uppercase text-slate-600 tracking-widest">
@@ -267,7 +287,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                           </div>
                       </div>
                   </div>
-                  <button onClick={handleStartGeneration} disabled={isGenerating} className={`w-full py-6 px-6 rounded-[1.8rem] font-black text-sm tracking-[0.4em] uppercase transition-all flex items-center justify-center gap-3 shadow-lg ${isGenerating ? 'bg-slate-800 text-slate-600' : 'bg-white text-slate-900 hover:scale-[1.01] active:scale-95'}`}>
+                  <button id="studio-curate-btn" onClick={handleStartGeneration} disabled={isGenerating} className={`w-full py-6 px-6 rounded-[1.8rem] font-black text-sm tracking-[0.4em] uppercase transition-all flex items-center justify-center gap-3 shadow-lg ${isGenerating ? 'bg-slate-800 text-slate-600' : 'bg-white text-slate-900 hover:scale-[1.01] active:scale-95'}`}>
                       {isGenerating ? <Loader2Icon size={20} className="animate-spin" /> : <SparklesIcon size={20} />}
                       {isGenerating ? `Curation Cycle: ${generatedRecipes.length}/4` : `Find Recipes`}
                   </button>
@@ -323,9 +343,18 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                                     <h3 className="text-2xl md:text-3xl font-black text-white font-serif italic tracking-tight uppercase leading-none line-clamp-1">{recipe.title}</h3>
                                     <p className="text-slate-500 text-[10px] font-bold uppercase tracking-widest italic truncate">{recipe.description}</p>
                                 </div>
-                                <button onClick={(e) => { e.stopPropagation(); onToggleSave(recipe); }} className={`p-2.5 rounded-xl transition-all shrink-0 ${savedRecipes.some(r => r.id === recipe.id) ? 'bg-rose-500 text-white' : 'text-slate-400 hover:text-rose-500 bg-white/5 border border-white/10'}`}>
-                                    <Heart size={16} fill={savedRecipes.some(r => r.id === recipe.id) ? "currentColor" : "none"} />
-                                </button>
+                                <div className="flex items-center gap-2 shrink-0">
+                                    <button 
+                                      onClick={(e) => openScheduleModal(e, recipe)}
+                                      className="p-2.5 rounded-xl transition-all text-slate-400 hover:text-white bg-white/5 border border-white/10 hover:bg-primary-600"
+                                      title="Add to Calendar"
+                                    >
+                                        <CalendarIcon size={16} />
+                                    </button>
+                                    <button onClick={(e) => { e.stopPropagation(); onToggleSave(recipe); }} className={`p-2.5 rounded-xl transition-all ${savedRecipes.some(r => r.id === recipe.id) ? 'bg-rose-500 text-white' : 'text-slate-400 hover:text-rose-500 bg-white/5 border border-white/10'}`}>
+                                        <Heart size={16} fill={savedRecipes.some(r => r.id === recipe.id) ? "currentColor" : "none"} />
+                                    </button>
+                                </div>
                             </div>
                             
                             <div className="flex flex-wrap items-center gap-2 mb-8">
@@ -366,15 +395,74 @@ const DashboardView: React.FC<DashboardViewProps> = ({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {savedRecipes.map(recipe => (
-                <div key={recipe.id} className="bg-[#0c1220] p-6 rounded-[2rem] border border-white/5 shadow-xl transition-all flex flex-col group relative overflow-hidden h-[240px]">
+                <div key={recipe.id} className="bg-[#0c1220] p-6 rounded-[2rem] border border-white/5 shadow-xl transition-all flex flex-col group relative overflow-hidden min-h-[280px]">
                     <h3 className="font-black text-lg lg:text-xl text-white font-serif leading-tight italic tracking-tighter mb-4 uppercase line-clamp-2 relative z-10">{recipe.title}</h3>
+                    
+                    <div className="relative z-10 space-y-4 mb-4 flex-1">
+                        <div className="flex flex-wrap gap-2">
+                            <div className="flex items-center gap-1.5 bg-white/5 px-2.5 py-1.5 rounded-lg text-slate-400 font-black text-[8px] uppercase tracking-widest">
+                                <ClockIcon size={10} className="text-primary-500"/> {recipe.timeMinutes}m
+                            </div>
+                            <div className="flex items-center gap-1.5 bg-white/5 px-2.5 py-1.5 rounded-lg text-slate-400 font-black text-[8px] uppercase tracking-widest">
+                                <FlameIcon size={10} className="text-rose-500"/> {recipe.calories}
+                            </div>
+                            <div className="flex items-center gap-1.5 bg-white/5 px-2.5 py-1.5 rounded-lg text-slate-400 font-black text-[8px] uppercase tracking-widest">
+                                <Users size={10} className="text-sky-500"/> {recipe.servings}
+                            </div>
+                        </div>
+                    </div>
+
                     <div className="mt-auto relative z-10 flex gap-2">
                         <button onClick={() => openFullRecipe(recipe)} className="flex-1 py-3 bg-white text-slate-900 rounded-lg font-black text-[8px] uppercase tracking-[0.3em] flex items-center justify-center gap-2 hover:bg-primary-500 hover:text-white transition-all">Open Recipe</button>
+                        <button onClick={(e) => openScheduleModal(e, recipe)} className="p-3 bg-slate-800 text-slate-400 rounded-lg hover:bg-primary-600 hover:text-white transition-all"><CalendarIcon size={14}/></button>
                         <button onClick={() => onToggleSave(recipe)} className="p-3 bg-rose-500/10 text-rose-500 rounded-lg hover:bg-rose-500 hover:text-white transition-all"><Heart size={14} fill="currentColor" /></button>
                     </div>
                 </div>
             ))}
         </div>
+      )}
+
+      {/* SCHEDULE MODAL */}
+      {schedulingRecipe && (
+          <div className="fixed inset-0 z-[150] flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 animate-fade-in">
+              <div className="bg-[#0c1220] w-full max-sm rounded-[2.5rem] p-8 border border-white/10 shadow-2xl animate-slide-up">
+                  <div className="flex justify-between items-center mb-6">
+                      <h3 className="text-xl font-black font-serif text-white">Schedule Meal</h3>
+                      <button onClick={() => setSchedulingRecipe(null)} className="text-slate-400 hover:text-white"><X size={20}/></button>
+                  </div>
+                  <div className="space-y-4 mb-8">
+                      <p className="text-sm font-bold text-primary-400 italic">"{schedulingRecipe.title}"</p>
+                      <div>
+                          <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2 block">Date</label>
+                          <input 
+                              type="date" 
+                              value={scheduleDate} 
+                              onChange={e => setScheduleDate(e.target.value)}
+                              className="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-white text-sm font-bold outline-none focus:border-primary-500"
+                          />
+                      </div>
+                      <div>
+                          <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 mb-2 block">Meal Type</label>
+                          <select 
+                              value={scheduleType} 
+                              onChange={e => setScheduleType(e.target.value)}
+                              className="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-white text-sm font-bold outline-none focus:border-primary-500"
+                          >
+                              <option>Breakfast</option>
+                              <option>Lunch</option>
+                              <option>Dinner</option>
+                              <option>Snack</option>
+                          </select>
+                      </div>
+                  </div>
+                  <button 
+                      onClick={handleConfirmSchedule}
+                      className="w-full py-4 bg-primary-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] shadow-lg hover:scale-[1.02] active:scale-95 transition-all"
+                  >
+                      Add to Calendar
+                  </button>
+              </div>
+          </div>
       )}
     </div>
   );

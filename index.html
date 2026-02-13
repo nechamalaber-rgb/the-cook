@@ -7,8 +7,13 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#090e1a">
+    
+    <!-- GOOGLE OWNERSHIP VERIFICATION -->
+    <!-- Paste your google-site-verification meta tag below this line -->
+    <meta name="google-site-verification" content="REPLACE_WITH_YOUR_CODE_FROM_GOOGLE_CONSOLE" />
+
     <meta name="description" content="Prepzu - The AI-powered pantry manager and recipe studio." />
-    <meta property="og:title" content="Prepzu Studio" />
+    <meta property="og:title" content="Prepzu" />
     <meta property="og:description" content="Turn your pantry into a culinary masterpiece with AI." />
     <meta property="og:image" content="https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=1200&q=80" />
     
@@ -17,6 +22,7 @@
     
     <title>Prepzu | AI Culinary Studio</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script>
       tailwind.config = {
         darkMode: 'class',
@@ -44,18 +50,6 @@
                 800: '#6a4e40',
                 900: '#584238',
                 950: '#2f211c',
-              },
-              accent: {
-                50: '#fff7ed',
-                100: '#ffedd5',
-                200: '#fed7aa',
-                300: '#fdba74',
-                400: '#fb923c',
-                500: '#f97316', 
-                600: '#ea580c',
-                700: '#c2410c',
-                800: '#9a3412',
-                900: '#7c2d12',
               }
             },
             fontFamily: {
@@ -64,16 +58,10 @@
             animation: {
               'fade-in': 'fadeIn 0.4s ease-out',
               'slide-up': 'slideUp 0.4s ease-out',
-              'slide-down': 'slideDown 0.3s ease-out',
-              'pulse-soft': 'pulseSoft 2s infinite',
-              'scan': 'scan 2s linear infinite',
             },
             keyframes: {
               fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
               slideUp: { '0%': { transform: 'translateY(20px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } },
-              slideDown: { '0%': { transform: 'translateY(-10px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } },
-              pulseSoft: { '0%, 100%': { opacity: '0.4' }, '50%': { opacity: '0.1' } },
-              scan: { '0%': { transform: 'translateY(0)' }, '100%': { transform: 'translateY(100%)' } }
             }
           },
         },
@@ -88,40 +76,9 @@
         background-color: #090e1a; 
         color: #f8fafc; 
         -webkit-tap-highlight-color: transparent; 
-        transition: background-color 0.3s ease;
         overscroll-behavior-y: contain;
       }
-      
       .no-scrollbar::-webkit-scrollbar { display: none; }
-      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-      
-      .glass-panel {
-        background: rgba(15, 23, 42, 0.8);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-      }
-
-      input[type=range] {
-        -webkit-appearance: none;
-        background: transparent;
-      }
-      input[type=range]::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        height: 20px;
-        width: 20px;
-        border-radius: 50%;
-        background: #b08d6a;
-        cursor: pointer;
-        margin-top: -6px;
-        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-      }
-      input[type=range]::-webkit-slider-runnable-track {
-        width: 100%;
-        height: 8px;
-        background: #1e293b;
-        border-radius: 4px;
-      }
     </style>
     <script type="importmap">
 {
@@ -134,8 +91,8 @@
     "react-router-dom": "https://esm.sh/react-router-dom@7.1.5?external=react,react-dom",
     "@stripe/stripe-js": "https://esm.sh/@stripe/stripe-js@4.0.0",
     "@stripe/react-stripe-js": "https://esm.sh/@stripe/react-stripe-js@2.7.1?external=react,react-dom,@stripe/stripe-js",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/"
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "react/": "https://esm.sh/react@^19.2.4/"
   }
 }
 </script>
