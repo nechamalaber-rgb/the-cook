@@ -205,7 +205,7 @@ const PantryView: React.FC<PantryViewProps> = ({ items, setItems, onConsumeGener
              <LayoutGrid size={14} className="text-primary-400" />
              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white">STOCKED ITEMS</span>
           </div>
-          <h1 className="text-5xl md:text-[6.5rem] font-serif font-black text-white tracking-tighter leading-none italic">Food.</h1>
+          <h1 className="text-5xl md:text-[6.5rem] font-serif font-black text-white tracking-tighter leading-none italic">Prepzu.</h1>
         </div>
         
         <div className="flex flex-wrap gap-3 w-full md:w-auto items-center">
@@ -278,16 +278,20 @@ const PantryView: React.FC<PantryViewProps> = ({ items, setItems, onConsumeGener
           })}
       </div>
 
-      <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-40 w-full max-w-[280px] px-2 animate-slide-up">
+      <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-40 w-full max-w-[340px] px-2 animate-slide-up">
           <div className="bg-white rounded-full p-2 shadow-[0_40px_80px_-10px_rgba(0,0,0,0.6)] flex items-center justify-between border border-white/20">
-              <div className="flex items-center gap-2 pl-4">
-                  <div className="p-2.5 bg-primary-500 rounded-full text-white shadow-lg"><Sparkles size={18} className="animate-pulse" /></div>
+              <div className="flex items-center gap-3 pl-4">
+                  <div className="p-2 bg-slate-100 rounded-full text-primary-600 shadow-inner"><Sparkles size={16} className="animate-pulse" /></div>
+                  <div className="flex flex-col">
+                     <span className="text-[8px] font-black uppercase text-slate-400 tracking-[0.2em] leading-none mb-0.5">In Stock</span>
+                     <span className="text-xs font-black text-slate-900 leading-none uppercase tracking-tight">{items.length} Things</span>
+                  </div>
               </div>
               <button 
                 onClick={() => navigate('/studio')}
-                className="bg-primary-600 text-white px-10 py-5 rounded-full font-black text-xs uppercase tracking-[0.2em] shadow-lg hover:bg-primary-500 active:scale-95 transition-all flex items-center gap-3"
+                className="bg-orange-500 text-white px-6 py-4 rounded-full font-black text-[10px] uppercase tracking-[0.15em] shadow-lg hover:bg-orange-400 active:scale-95 transition-all flex items-center gap-2"
               >
-                RECIPES <ChevronRight size={16} />
+                Make Recipes <ChevronRight size={14} />
               </button>
           </div>
       </div>

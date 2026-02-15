@@ -15,6 +15,7 @@ import CalendarView from './components/CalendarView';
 import AboutView from './components/AboutView';
 import PlansView from './components/PlansView';
 import PrivacyView from './components/PrivacyView';
+import SecurityView from './components/SecurityView';
 import { Walkthrough } from './components/Walkthrough';
 import { generateSingleSmartRecipe, generateRecipeImage } from './services/geminiService';
 import { autoCategorize, parseQuantityValue, mergeQuantities } from './src/utils';
@@ -366,6 +367,7 @@ const App: React.FC = () => {
             <Route path="/about" element={<AboutView />} />
             <Route path="/plans" element={<PlansView preferences={preferences} />} />
             <Route path="/privacy" element={<PrivacyView />} />
+            <Route path="/security" element={<SecurityView />} />
         </Routes>
       </main>
       
@@ -376,7 +378,7 @@ const App: React.FC = () => {
           </div>
           <div className="flex gap-8">
             <NavLink to="/privacy" className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-white transition-colors">Privacy Policy</NavLink>
-            <NavLink to="/about" className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-white transition-colors">About Studio</NavLink>
+            <NavLink to="/security" className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-white transition-colors">Security</NavLink>
           </div>
           <span className="text-[9px] font-black uppercase tracking-widest text-slate-600">© 2026 PREPZU.COM</span>
       </footer>
