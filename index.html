@@ -8,32 +8,21 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#090e1a">
     
-    <!-- GOOGLE OWNERSHIP VERIFICATION -->
     <meta name="google-site-verification" content="cnn-lpgIoXDKSpe7ERB8e5pwQ_8VQOxKIe_whfe98Dk" />
-
     <meta name="description" content="Prepzu - Professional AI Pantry Management and Recipe Studio." />
-    <meta property="og:title" content="Prepzu" />
-    <meta property="og:description" content="Intelligent culinary orchestration for the modern kitchen." />
     
     <link rel="manifest" href="metadata.json" />
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3565/3565407.png" />
     
     <title>Prepzu</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script>
       tailwind.config = {
         darkMode: 'class',
         theme: {
           extend: {
-            colors: {
-              primary: {
-                500: '#b08d6a', 
-              }
-            },
-            fontFamily: {
-              sans: ['Plus Jakarta Sans', 'sans-serif'],
-            },
+            colors: { primary: { 500: '#b08d6a' } },
+            fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
             animation: {
               'fade-in': 'fadeIn 0.4s ease-out',
               'slide-up': 'slideUp 0.4s ease-out',
@@ -50,13 +39,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-      body { 
-        font-family: 'Plus Jakarta Sans', sans-serif; 
-        background-color: #090e1a; 
-        color: #f8fafc; 
-        -webkit-tap-highlight-color: transparent; 
-        overscroll-behavior-y: contain;
-      }
+      body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #090e1a; color: #f8fafc; overscroll-behavior-y: contain; }
       .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
     <script type="importmap">
@@ -70,6 +53,7 @@
     "react-router-dom": "https://esm.sh/react-router-dom@7.1.5?external=react,react-dom",
     "@stripe/stripe-js": "https://esm.sh/@stripe/stripe-js@4.0.0",
     "@stripe/react-stripe-js": "https://esm.sh/@stripe/react-stripe-js@2.7.1?external=react,react-dom,@stripe/stripe-js",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.39.3",
     "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
     "react/": "https://esm.sh/react@^19.2.4/"
   }

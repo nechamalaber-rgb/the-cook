@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MealLog, Recipe, UserPreferences, Ingredient } from '../types';
@@ -6,7 +5,7 @@ import {
   ChevronLeft, ChevronRight, Clock, Flame, Utensils, 
   Coffee, Sun, Moon, Sunset, CheckCircle, 
   Trash2, X, TrendingUp, Plus,
-  Wand2, PieChart, Loader2, Sparkles, ScrollText, Calendar, ShoppingCart, ArrowRight, Beef, Milk, Scale, User, Wallet, Timer, Camera
+  Wand2, PieChart, Loader2, Sparkles, ScrollText, Calendar, ShoppingCart, ArrowRight, Beef, Milk, Scale, User, Wallet, Timer, Camera, Lock
 } from 'lucide-react';
 import { generateWeeklyPlan, estimateMealCalories, generateKosherWeeklyPlan, generateSingleSmartRecipe, analyzeMealFromImage } from '../services/geminiService';
 
@@ -47,6 +46,10 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   const [isAddMealModalOpen, setIsAddMealModalOpen] = useState(false);
   const [openingRecipeId, setOpeningRecipeId] = useState<string | null>(null);
   
+  // Paywall Check
+  const used = preferences?.freeGenerationsUsed || 0;
+  const isLocked = !preferences?.isProMember && used >= 3;
+
   // Plan State
   const [isPlanConfigOpen, setIsPlanConfigOpen] = useState(false);
   const [planConfig, setPlanConfig] = useState<{ 
@@ -150,6 +153,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   };
 
   const handleAutoPlan = async () => {
+      if (isLocked) { navigate('/plans'); return; }
       if (onRequireAccess && !onRequireAccess('To use auto-planning')) return;
       if (onConsumeGeneration && !onConsumeGeneration()) return; 
 
@@ -175,6 +179,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   };
 
   const handleInitiatePlan = () => {
+      if (isLocked) { navigate('/plans'); return; }
       const msg = isKosher ? 'To generate premium kosher plans' : 'To generate premium weekly plans';
       if (onRequireAccess && !onRequireAccess(msg)) return;
       setIsPlanConfigOpen(true);
@@ -282,15 +287,31 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   return (
     <div className="animate-fade-in flex flex-col h-full space-y-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 px-2">
-        <div>
-          <h1 className="text-4xl md:text-6xl font-black text-slate-900 dark:text-white font-serif tracking-tighter leading-none mb-3">
-             Culinary Calendar
-          </h1>
-          <div className="flex items-center gap-3">
-            <span className="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/30 rounded-full text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
-               {mealHistory.filter(m => m.date === new Date().toISOString().split('T')[0] && m.status === 'completed').length} Tasks Finalized Today
-            </span>
+        <div className="flex items-center gap-6">
+          <div>
+            <h1 className="text-4xl md:text-6xl font-black text-slate-900 dark:text-white font-serif tracking-tighter leading-none mb-3">
+               Culinary Calendar
+            </h1>
+            <div className="flex items-center gap-3">
+              <span className="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/30 rounded-full text-[10px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400">
+                 {mealHistory.filter(m => m.date === new Date().toISOString().split('T')[0] && m.status === 'completed').length} Tasks Finalized Today
+              </span>
+            </div>
           </div>
+          
+          {/* USAGE INDICATOR */}
+          {!preferences?.isProMember && (
+            <div className="hidden lg:flex flex-col items-center gap-1.5 p-3 px-4 bg-slate-900/50 rounded-2xl border border-white/5">
+                <div className="flex gap-1">
+                    {[1, 2, 3].map(i => (
+                        <div key={i} className={`w-6 h-1 rounded-full ${used >= i ? 'bg-primary-500 shadow-[0_0_8px_rgba(176,141,106,0.5)]' : 'bg-slate-800'}`} />
+                    ))}
+                </div>
+                <span className={`text-[8px] font-black uppercase tracking-widest ${isLocked ? 'text-rose-500' : 'text-slate-500'}`}>
+                    {isLocked ? 'LIMIT REACHED' : `${used}/3 USED`}
+                </span>
+            </div>
+          )}
         </div>
         
         <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
@@ -298,10 +319,10 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                 id="planner-generate-btn"
                 onClick={handleInitiatePlan}
                 disabled={isAutoPlanning}
-                className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-indigo-500 text-white px-6 py-4 rounded-2xl font-black shadow-xl hover:bg-indigo-600 transition-all text-[10px] uppercase tracking-widest"
+                className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-4 rounded-2xl font-black shadow-xl transition-all text-[10px] uppercase tracking-widest ${isLocked ? 'bg-indigo-600 text-white' : 'bg-indigo-500 text-white hover:bg-indigo-600'}`}
             >
-                {isAutoPlanning ? <Loader2 size={16} className="animate-spin" /> : <ScrollText size={16} />}
-                Generate {isKosher ? 'Kosher ' : ''}Week
+                {isAutoPlanning ? <Loader2 size={16} className="animate-spin" /> : (isLocked ? <Lock size={16}/> : <ScrollText size={16} />)}
+                {isLocked ? 'Unlock Unlimited' : `Generate ${isKosher ? 'Kosher ' : ''}Week`}
             </button>
             <button 
                 onClick={() => setIsAddMealModalOpen(true)}
@@ -529,9 +550,9 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                               <span className="text-xs font-bold text-slate-900 dark:text-white">{dailyCalories} Total kcal</span>
                           </div>
                       </div>
-                      <button onClick={handleAutoPlan} disabled={isAutoPlanning} className="flex items-center gap-2 text-primary-600 font-black text-[10px] uppercase tracking-widest hover:translate-x-1 transition-transform disabled:opacity-50">
-                          {isAutoPlanning ? <Loader2 size={16} className="animate-spin" /> : <Wand2 size={16} />}
-                          Auto-Curate Cycle <ChevronRight size={14}/>
+                      <button onClick={handleAutoPlan} disabled={isAutoPlanning} className={`flex items-center gap-2 font-black text-[10px] uppercase tracking-widest hover:translate-x-1 transition-transform disabled:opacity-50 ${isLocked ? 'text-indigo-600' : 'text-primary-600'}`}>
+                          {isAutoPlanning ? <Loader2 size={16} className="animate-spin" /> : (isLocked ? <Lock size={16}/> : <Wand2 size={16} />)}
+                          {isLocked ? 'Upgrade to Unlock Auto-Curate' : 'Auto-Curate Cycle'} <ChevronRight size={14}/>
                       </button>
                   </div>
               </div>

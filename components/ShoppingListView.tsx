@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Plus, Check, Trash2, ShoppingBag, Sparkles, Loader2, 
@@ -9,11 +8,11 @@ import {
   Copy, ExternalLink, Share2, Link, Save, Utensils, Beaker, Clipboard,
   FileText, MoveRight, Minus, MapPin, Search, Layers, Grid, Map as MapIcon, ChevronRight,
   History, Receipt, RotateCcw, Calendar, CheckSquare, Tag, CreditCard, ChevronDown, ExternalLink as ExtLink, ShoppingCart as CartIcon,
-  DownloadCloud, DollarSign, TrendingUp, BarChart, Eye, Clock, Flame, Globe, ArrowRight, ShoppingCart
+  DownloadCloud, DollarSign, TrendingUp, BarChart, Eye, Clock, Flame, Globe, ArrowRight, ShoppingCart, AlertCircle, Heart
 } from 'lucide-react';
 import { ShoppingItem, Category, Ingredient, UserPreferences, MealLog, Order, OrderStatus, Recipe } from '../types';
 import { processChefChatPlan, organizePastedText, generateRecipeImage } from '../services/geminiService';
-import { parseQuantityValue } from '../src/utils';
+import { parseQuantityValue } from '../utils';
 
 const STORE_OPTIONS = [
     { name: 'Any Store', url: 'https://www.google.com/search?q=', home: 'https://www.google.com', color: 'bg-slate-500', border: 'border-slate-500', text: 'text-slate-500' },
@@ -60,7 +59,7 @@ interface ShoppingListViewProps {
   preferences?: UserPreferences;
   mealHistory?: MealLog[];
   onRequireAccess?: (action: string, type?: string) => boolean;
-  onSaveConcept?: (concept: {title: string, description: string, missingItems: any[], fullRecipe?: any}) => void;
+  onAddRecipe: (recipe: Recipe) => void;
   onSavePastOrder?: (order: Order) => void;
   onScheduleMeal: (recipe: Recipe, date: string, mealType: string) => void;
   onConsumeGeneration?: () => boolean;
@@ -75,7 +74,8 @@ const ShoppingListView: React.FC<ShoppingListViewProps> = ({
   pantryItems = [], 
   preferences,
   onScheduleMeal,
-  onConsumeGeneration
+  onConsumeGeneration,
+  onAddRecipe
 }) => {
   const [activeView, setActiveView] = useState<'cart' | 'history'>('cart');
   const [newItemStore, setNewItemStore] = useState('Any Store');
@@ -87,6 +87,7 @@ const ShoppingListView: React.FC<ShoppingListViewProps> = ({
   const [isProcessingBulk, setIsProcessingBulk] = useState(false);
 
   const [status, setStatus] = useState<'idle' | 'loading' | 'reveal'>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
   const [culinaryConcepts, setCulinaryConcepts] = useState<Array<{
       title: string, 
       description: string, 
@@ -144,6 +145,7 @@ const ShoppingListView: React.FC<ShoppingListViewProps> = ({
     if (onConsumeGeneration && !onConsumeGeneration()) return; 
 
     setStatus('loading');
+    setErrorMessage('');
     try {
         const result = await processChefChatPlan(pantryItems, chatInput, preferences || {} as UserPreferences);
         
@@ -151,13 +153,20 @@ const ShoppingListView: React.FC<ShoppingListViewProps> = ({
            setCulinaryConcepts(result.plans.map((p: any) => ({
                title: p.concept,
                description: p.description,
-               missingItems: p.items,
+               missingItems: p.items || [],
                fullRecipe: p.fullRecipe,
                groundingLinks: p.groundingLinks
            })));
+           setStatus('reveal');
+        } else {
+           setStatus('idle');
+           setErrorMessage("Couldn't generate a valid plan. Try adding more details to your request.");
         }
-        setStatus('reveal');
-    } catch (err) { setStatus('idle'); }
+    } catch (err) { 
+        console.error("Plan generation error:", err);
+        setStatus('idle');
+        setErrorMessage("Service Interruption. Please try again in a moment.");
+    }
   };
 
   const openConceptDetail = async (index: number) => {
@@ -176,6 +185,26 @@ const ShoppingListView: React.FC<ShoppingListViewProps> = ({
             setIsGeneratingConceptImage(false);
         }
     }
+  };
+
+  const saveConceptToRecipes = (index: number) => {
+    const concept = culinaryConcepts[index];
+    const newRecipe: Recipe = {
+        id: `concept-${Date.now()}-${index}`,
+        title: concept.title,
+        description: concept.description,
+        ingredients: concept.fullRecipe.ingredients,
+        instructions: concept.fullRecipe.instructions,
+        timeMinutes: 45,
+        difficulty: 'Medium',
+        calories: 450,
+        missingIngredients: concept.missingItems.map(i => i.name),
+        matchScore: 100,
+        imageUrl: concept.imageUrl,
+        groundingLinks: concept.groundingLinks
+    };
+    onAddRecipe(newRecipe);
+    alert(`"${concept.title}" saved to My Recipes.`);
   };
 
   const commitToCart = (index?: number) => {
@@ -357,6 +386,12 @@ const ShoppingListView: React.FC<ShoppingListViewProps> = ({
                                 />
                                 <button onClick={handleChatPlan} className="bg-primary-600 px-8 flex items-center justify-center text-white hover:bg-primary-500 transition-colors"><Send size={20} /></button>
                             </div>
+                            
+                            {errorMessage && (
+                                <div className="flex items-center justify-center gap-2 p-4 bg-rose-500/10 border border-rose-500/30 rounded-2xl text-rose-400 text-xs font-bold uppercase tracking-widest animate-fade-in">
+                                    <AlertCircle size={16} /> {errorMessage}
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -377,7 +412,16 @@ const ShoppingListView: React.FC<ShoppingListViewProps> = ({
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {culinaryConcepts.map((concept, index) => (
                                     <div key={index} className="p-6 rounded-[2rem] bg-[#0c1220] border border-white/10 shadow-xl flex flex-col h-full hover:border-primary-500/30 transition-all group">
-                                        <h3 className="text-xl font-black font-serif text-white mb-2 italic">{concept.title}</h3>
+                                        <div className="flex justify-between items-start mb-2">
+                                            <h3 className="text-xl font-black font-serif text-white italic tracking-tighter uppercase">{concept.title}</h3>
+                                            <button 
+                                                onClick={() => saveConceptToRecipes(index)}
+                                                className="p-2 text-slate-500 hover:text-rose-500 bg-white/5 rounded-lg transition-colors"
+                                                title="Save to Recipes"
+                                            >
+                                                <Heart size={16} />
+                                            </button>
+                                        </div>
                                         <p className="text-slate-400 text-xs italic mb-6 flex-1 line-clamp-3">"{concept.description}"</p>
                                         
                                         <div className="p-4 bg-[#050505] rounded-2xl border border-white/5 mb-6">
@@ -437,37 +481,48 @@ const ShoppingListView: React.FC<ShoppingListViewProps> = ({
                 </div>
 
                 <div className="space-y-8">
-                    {sortedCategories.map(group => (
-                        <div key={group} className="space-y-4">
-                            <h3 className="text-xs font-black uppercase tracking-[0.3em] text-slate-400 px-4">{group}</h3>
-                            <div className="grid gap-3">
-                                {groupedItems[group].map(item => (
-                                    <div key={item.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-[1.8rem] flex items-center justify-between shadow-sm group/item">
-                                        <div className="flex items-center gap-5">
-                                            <button 
-                                                onClick={() => toggleCheck(item.id)}
-                                                className={`w-7 h-7 rounded-xl border-2 flex items-center justify-center transition-all ${item.checked ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg' : 'border-slate-200 dark:border-slate-700'}`}
-                                            >
-                                                {item.checked && <Check size={16} />}
-                                            </button>
-                                            <div>
-                                                <h4 className={`font-black text-sm uppercase tracking-tight ${item.checked ? 'text-slate-300 dark:text-slate-600 line-through' : 'text-slate-900 dark:text-white'}`}>{item.name}</h4>
-                                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{item.quantity} • {item.store || 'Standard Store'}</p>
+                    {sortedCategories.map(group => {
+                        const groupItems = groupedItems[group];
+                        // Calculate total for this group
+                        const groupTotal = groupItems.reduce((sum, item) => sum + ((item.price || 0) * parseQuantityValue(item.quantity).num), 0);
+                        return (
+                            <div key={group} className="space-y-4">
+                                <div className="flex justify-between items-end px-4">
+                                    <h3 className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">{group}</h3>
+                                    <span className="text-[10px] font-black text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg">${groupTotal.toFixed(2)}</span>
+                                </div>
+                                <div className="grid gap-3">
+                                    {groupItems.map(item => (
+                                        <div key={item.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-[1.8rem] flex items-center justify-between shadow-sm group/item">
+                                            <div className="flex items-center gap-5">
+                                                <button 
+                                                    onClick={() => toggleCheck(item.id)}
+                                                    className={`w-7 h-7 rounded-xl border-2 flex items-center justify-center transition-all ${item.checked ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg' : 'border-slate-200 dark:border-slate-700'}`}
+                                                >
+                                                    {item.checked && <Check size={16} />}
+                                                </button>
+                                                <div>
+                                                    <h4 className={`font-black text-sm uppercase tracking-tight ${item.checked ? 'text-slate-300 dark:text-slate-600 line-through' : 'text-slate-900 dark:text-white'}`}>{item.name}</h4>
+                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{item.quantity} • {item.store || 'Standard Store'}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-4">
+                                                <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700">
+                                                    <button onClick={() => adjustQuantity(item.id, -1)} className="p-1 text-slate-400 hover:text-rose-500"><Minus size={14}/></button>
+                                                    <span className="text-xs font-black text-slate-900 dark:text-white px-2">{parseQuantityValue(item.quantity).num}</span>
+                                                    <button onClick={() => adjustQuantity(item.id, 1)} className="p-1 text-slate-400 hover:text-emerald-500"><Plus size={14}/></button>
+                                                </div>
+                                                <span className="text-[10px] font-bold text-slate-500 w-12 text-right">
+                                                    ${((item.price || 0) * parseQuantityValue(item.quantity).num).toFixed(2)}
+                                                </span>
+                                                <button onClick={() => deleteItem(item.id)} className="p-2 text-slate-200 hover:text-rose-500 opacity-0 group-hover/item:opacity-100 transition-all"><Trash2 size={18}/></button>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-4">
-                                            <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700">
-                                                <button onClick={() => adjustQuantity(item.id, -1)} className="p-1 text-slate-400 hover:text-rose-500"><Minus size={14}/></button>
-                                                <span className="text-xs font-black text-slate-900 dark:text-white px-2">{parseQuantityValue(item.quantity).num}</span>
-                                                <button onClick={() => adjustQuantity(item.id, 1)} className="p-1 text-slate-400 hover:text-emerald-500"><Plus size={14}/></button>
-                                            </div>
-                                            <button onClick={() => deleteItem(item.id)} className="p-2 text-slate-200 hover:text-rose-500 opacity-0 group-hover/item:opacity-100 transition-all"><Trash2 size={18}/></button>
-                                        </div>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             </div>
 
@@ -543,23 +598,32 @@ const ShoppingListView: React.FC<ShoppingListViewProps> = ({
 
       {/* CONCEPT DETAIL MODAL */}
       {activeConceptIndex !== null && culinaryConcepts[activeConceptIndex] && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/95 backdrop-blur-xl p-6 animate-fade-in">
-              <div className="bg-[#0c1220] w-full max-w-2xl rounded-[3rem] overflow-hidden shadow-2xl border border-white/10 animate-slide-up flex flex-col max-h-[90vh]">
-                  <div className="relative h-64 bg-slate-900 flex items-center justify-center border-b border-white/5 overflow-hidden">
+          <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/95 backdrop-blur-xl p-4 md:p-6 animate-fade-in">
+              <div className="bg-[#0c1220] w-full max-w-3xl rounded-[3rem] overflow-hidden shadow-2xl border border-white/10 animate-slide-up flex flex-col max-h-[95vh]">
+                  <div className="relative h-80 md:h-[420px] bg-slate-900 flex items-center justify-center border-b border-white/5 overflow-hidden group/modalimg">
                       {culinaryConcepts[activeConceptIndex].imageUrl ? (
-                          <img src={culinaryConcepts[activeConceptIndex].imageUrl} className="w-full h-full object-cover" alt="" />
+                          <img src={culinaryConcepts[activeConceptIndex].imageUrl} className="w-full h-full object-cover transition-transform duration-[8s] group-hover/modalimg:scale-110" alt="" />
                       ) : (
                           <div className="flex flex-col items-center gap-4">
                               {isGeneratingConceptImage ? <Loader2 size={32} className="animate-spin text-primary-500" /> : <Utensils size={48} className="text-slate-800" />}
                               <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">{isGeneratingConceptImage ? 'Neural Rendering...' : 'No Visuals'}</span>
                           </div>
                       )}
-                      <button onClick={() => setActiveConceptIndex(null)} className="absolute top-6 right-6 p-2 bg-black/50 text-white rounded-full hover:bg-black transition-all"><X size={20}/></button>
+                      <button onClick={() => setActiveConceptIndex(null)} className="absolute top-6 right-6 p-2 bg-black/50 text-white rounded-full hover:bg-black transition-all z-20"><X size={20}/></button>
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#0c1220] via-transparent to-transparent opacity-60"></div>
                   </div>
                   <div className="p-8 space-y-6 overflow-y-auto custom-scrollbar">
-                      <div>
-                          <h2 className="text-3xl font-black font-serif text-white italic tracking-tighter uppercase">{culinaryConcepts[activeConceptIndex].title}</h2>
-                          <p className="text-slate-400 text-sm mt-2 italic">"{culinaryConcepts[activeConceptIndex].description}"</p>
+                      <div className="flex justify-between items-start gap-4">
+                          <div>
+                              <h2 className="text-3xl font-black font-serif text-white italic tracking-tighter uppercase">{culinaryConcepts[activeConceptIndex].title}</h2>
+                              <p className="text-slate-400 text-sm mt-2 italic">"{culinaryConcepts[activeConceptIndex].description}"</p>
+                          </div>
+                          <button 
+                            onClick={() => saveConceptToRecipes(activeConceptIndex!)}
+                            className="px-6 py-3 bg-white/5 border border-white/10 rounded-2xl text-rose-500 hover:bg-rose-500 hover:text-white transition-all flex items-center gap-2 font-black text-[10px] uppercase tracking-widest"
+                          >
+                            <Heart size={16} fill="currentColor" /> Save
+                          </button>
                       </div>
 
                       <div className="space-y-4">
@@ -573,6 +637,41 @@ const ShoppingListView: React.FC<ShoppingListViewProps> = ({
                               ))}
                           </div>
                       </div>
+
+                      {/* NEW: Full Recipe Details */}
+                      {culinaryConcepts[activeConceptIndex].fullRecipe && (
+                          <div className="space-y-6 pt-4 border-t border-white/5">
+                              {/* Ingredients */}
+                              <div className="space-y-3">
+                                  <h4 className="text-[10px] font-black uppercase tracking-widest text-primary-500 flex items-center gap-2">
+                                      <Utensils size={12}/> Ingredients
+                                  </h4>
+                                  <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                      {culinaryConcepts[activeConceptIndex].fullRecipe.ingredients?.map((ing, i) => (
+                                          <li key={i} className="text-xs text-slate-300 flex items-start gap-2">
+                                              <span className="w-1 h-1 rounded-full bg-slate-600 mt-1.5 shrink-0" />
+                                              {ing}
+                                          </li>
+                                      ))}
+                                  </ul>
+                              </div>
+
+                              {/* Instructions */}
+                              <div className="space-y-3">
+                                  <h4 className="text-[10px] font-black uppercase tracking-widest text-primary-500 flex items-center gap-2">
+                                      <FileText size={12}/> Instructions
+                                  </h4>
+                                  <div className="space-y-3">
+                                      {culinaryConcepts[activeConceptIndex].fullRecipe.instructions?.map((step, i) => (
+                                          <div key={i} className="flex gap-3 text-xs text-slate-300">
+                                              <span className="font-black text-slate-500 shrink-0 mt-0.5">0{i + 1}</span>
+                                              <p className="leading-relaxed">{step}</p>
+                                          </div>
+                                      ))}
+                                  </div>
+                              </div>
+                          </div>
+                      )}
                       
                       <div className="grid grid-cols-2 gap-4 pt-4">
                           <button onClick={() => scheduleConcept(activeConceptIndex!)} className="py-5 bg-primary-600 text-white rounded-[1.5rem] font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg hover:bg-primary-500 active:scale-95 transition-all">

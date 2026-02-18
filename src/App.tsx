@@ -19,8 +19,9 @@ import { generateSingleSmartRecipe, generateRecipeImage } from '../services/gemi
 import { autoCategorize, parseQuantityValue, mergeQuantities } from './utils';
 
 const DEFAULT_INITIAL_ITEMS: Ingredient[] = [
-    { id: 'init-cheese', name: 'Cheese', category: Category.DAIRY, quantity: '1 Unit', addedDate: new Date().toISOString().split('T')[0], imageUrl: '' },
-    { id: 'init-dough', name: 'Pizza Dough', category: Category.BAKERY, quantity: '1 Unit', addedDate: new Date().toISOString().split('T')[0], imageUrl: '' },
+    { id: 'init-chicken', name: 'Chicken Breasts', category: Category.MEAT, quantity: '2 lbs', addedDate: new Date().toISOString().split('T')[0], imageUrl: '' },
+    { id: 'init-flank', name: 'Chicken Flanks (Tenders)', category: Category.MEAT, quantity: '1 lb', addedDate: new Date().toISOString().split('T')[0], imageUrl: '' },
+    { id: 'init-pretzel', name: 'Pretzel Buns', category: Category.BAKERY, quantity: '4 Units', addedDate: new Date().toISOString().split('T')[0], imageUrl: '' },
     { id: 'init-sauce', name: 'Sauce', category: Category.PANTRY, quantity: '1 Unit', addedDate: new Date().toISOString().split('T')[0], imageUrl: '' }
 ];
 
@@ -29,7 +30,6 @@ const DEFAULT_PREFS: UserPreferences = {
   themeColor: 'classic',
   isProMember: false, 
   subscriptionTier: 'none',
-  trialUsed: false,
   dailyUsage: { date: new Date().toISOString().split('T')[0], count: 0 },
   dietaryRestrictions: [],
   cuisinePreferences: ['American', 'Healthy'],
@@ -37,19 +37,19 @@ const DEFAULT_PREFS: UserPreferences = {
   appliances: ['Stove', 'Oven', 'Air Fryer'],
   skillLevel: 'Intermediate',
   strictness: 'Strict',
-  isKosher: false,
+  isKosher: true,
   healthGoal: 'Maintain',
   nutritionalGoals: { maxCaloriesPerMeal: '800', minProteinPerMeal: '30' },
   measurementSystem: 'Imperial',
   emailNotifications: true,
+  recipeUpdateNotifications: true,
+  promotionNotifications: false,
   spiceLevel: 'Medium',
   budget: 'Moderate',
   blacklist: [],
   householdSize: 2,
   chefPersonality: 'Strict',
-  generationsCount: 4,
   onboardingCompleted: false,
-  activeWalkthroughStep: 0,
   personalTasteBio: 'I appreciate fresh produce and efficient meals.',
   cookingStyle: 'simple',
   freeGenerationsUsed: 0
@@ -360,7 +360,8 @@ const App: React.FC = () => {
             <Route path="/studio" element={<DashboardView pantryItems={activePantry.items} mealHistory={mealHistory} preferences={preferences} setPreferences={setPreferences} savedRecipes={savedRecipes} generatedRecipes={generatedRecipes} setGeneratedRecipes={setGeneratedRecipes} onLogMeal={handleLogMeal} onScheduleMeal={handleScheduleMeal} setActiveRecipe={setActiveRecipe} onToggleSave={handleToggleSave} isGenerating={isGeneratingRecipes} onGenerate={handleGenerateRecipes} onCancelGeneration={() => setIsGeneratingRecipes(false)} onRequireAccess={(a) => !!currentUserEmail} onAddRecipe={(r) => setSavedRecipes(prev => [r, ...prev])} onAddToShoppingList={addMissingToShopping} onConsumeGeneration={handleConsumeGeneration} />} />
             <Route path="/calendar" element={<CalendarView mealHistory={mealHistory} savedRecipes={savedRecipes} preferences={preferences} pantryItems={activePantry.items} onScheduleMeal={handleScheduleMeal} setMealHistory={setMealHistory} onUpdateMealStatus={(id, status) => setMealHistory(prev => prev.map(m => m.id === id ? {...m, status} : m))} onDeleteMealLog={(id) => setMealHistory(prev => prev.filter(m => m.id !== id))} onAddToShoppingList={addMissingToShopping} setActiveRecipe={setActiveRecipe} onRequireAccess={(a) => !!currentUserEmail} onConsumeGeneration={handleConsumeGeneration} />} />
             <Route path="/recipes" element={<RecipeView pantryItems={activePantry.items} setPantryItems={setActivePantryItems} preferences={preferences} onAddToShoppingList={addMissingToShopping} savedRecipes={savedRecipes} onToggleSave={handleToggleSave} mealHistory={mealHistory} onLogMeal={handleLogMeal} selectedRecipe={activeRecipe} setSelectedRecipe={setActiveRecipe} cookingMode={isCookingMode} setCookingMode={setIsCookingMode} currentStep={cookingStep} setCurrentStep={setCookingStep} activeTab={recipeTab} setActiveTab={setRecipeTab} onScheduleMeal={handleScheduleMeal} generatedRecipes={generatedRecipes} setGeneratedRecipes={setGeneratedRecipes} onUpdateRecipe={handleUpdateRecipe} />} />
-            <Route path="/shopping" element={<ShoppingListView items={shoppingList} setItems={setShoppingList} orderHistory={orderHistory} onPlaceOrder={handleCompleteOrder} onReorder={handleReorder} onUpdateOrderStatus={handleUpdateOrderStatus} pantryItems={activePantry.items} preferences={preferences} mealHistory={mealHistory} onRequireAccess={(a) => !!currentUserEmail} onSaveConcept={handleUpdateRecipe as any} onSavePastOrder={(o) => setOrderHistory(prev => [o, ...prev])} onScheduleMeal={handleScheduleMeal} onConsumeGeneration={handleConsumeGeneration} />} />
+            {/* Fix: Passed correct onAddRecipe prop and renamed onSaveConcept to onAddRecipe */}
+            <Route path="/shopping" element={<ShoppingListView items={shoppingList} setItems={setShoppingList} orderHistory={orderHistory} onPlaceOrder={handleCompleteOrder} onReorder={handleReorder} onUpdateOrderStatus={handleUpdateOrderStatus} pantryItems={activePantry.items} preferences={preferences} mealHistory={mealHistory} onRequireAccess={(a) => !!currentUserEmail} onAddRecipe={(r) => setSavedRecipes(prev => [r, ...prev])} onSavePastOrder={(o) => setOrderHistory(prev => [o, ...prev])} onScheduleMeal={handleScheduleMeal} onConsumeGeneration={handleConsumeGeneration} />} />
             <Route path="/settings" element={<SettingsView preferences={preferences} setPreferences={setPreferences} mealHistory={mealHistory} pantries={pantries} setPantries={setPantries} onSignOut={handleSignOut} onGoToLanding={() => {}} showToast={showToast} />} />
             <Route path="/about" element={<AboutView />} />
             <Route path="/plans" element={<PlansView preferences={preferences} />} />
