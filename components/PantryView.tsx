@@ -153,7 +153,7 @@ const PantryView: React.FC<PantryViewProps> = ({ items, setItems, onConsumeGener
              <LayoutGrid size={10} className="text-primary-400" />
              <span className="text-[8px] font-black uppercase tracking-[0.3em] text-white">Central Hub</span>
           </div>
-          <h1 className="text-4xl md:text-6xl font-serif font-black text-white tracking-tighter leading-none italic">Manifest.</h1>
+          <h1 className="text-4xl md:text-6xl font-serif font-black text-white tracking-tighter leading-none italic">Prepzu.</h1>
         </div>
         
         <div className="flex flex-wrap gap-2 w-full md:w-auto items-center">

@@ -1,4 +1,3 @@
-
 import { ShoppingBag, Settings, Home as HomeIcon, Sparkles, Calendar as CalendarIcon, X, Crown, Info, MessageSquarePlus, ShieldCheck, UserPlus, HelpCircle, Layers, ClipboardList, CreditCard, AlertCircle, Loader2, User, LogOut, ChevronDown, UserCircle, Zap } from 'lucide-react';
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Routes, Route, NavLink, useLocation, useNavigate, Navigate, HashRouter } from 'react-router-dom';
@@ -291,6 +290,12 @@ const PrepzuShell: React.FC<PrepzuShellProps> = ({ session }) => {
   const handleGenerateRecipes = async (options: RecipeGenerationOptions) => {
     setIsGeneratingRecipes(true);
     setGeneratedRecipes([]); 
+    
+    // COLLECT ALL FORBIDDEN TITLES (Saved, History, Current Generation)
+    const savedTitles = savedRecipes.map(r => r.title);
+    const historyTitles = mealHistory.map(m => m.recipeTitle);
+    const baseExclusions = Array.from(new Set([...savedTitles, ...historyTitles]));
+    
     const targetCount = options.recipeCount || 4; 
     let currentBatchTitles: string[] = [];
 
@@ -300,7 +305,7 @@ const PrepzuShell: React.FC<PrepzuShellProps> = ({ session }) => {
             const recipe = await generateSingleSmartRecipe(activePantry.items, preferences, {
                 ...options,
                 recipeCount: 1,
-                excludeTitles: currentBatchTitles
+                excludeTitles: [...baseExclusions, ...currentBatchTitles]
             }, i);
             
             if (recipe && recipe.title) {

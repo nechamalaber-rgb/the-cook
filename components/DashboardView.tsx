@@ -21,7 +21,8 @@ import {
   Calendar as CalendarIcon,
   X,
   Lock,
-  Crown
+  Crown,
+  RefreshCw
 } from 'lucide-react';
 import { Ingredient, Recipe, UserPreferences, MealLog, RecipeGenerationOptions } from '../types';
 import { analyzePantryStatus, generateRecipeImage } from '../services/geminiService';
@@ -50,7 +51,7 @@ interface DashboardViewProps {
 const DashboardView: React.FC<DashboardViewProps> = ({
   pantryItems,
   preferences,
-  setPreferences,
+  mealHistory,
   savedRecipes,
   generatedRecipes,
   setGeneratedRecipes,
@@ -73,7 +74,6 @@ const DashboardView: React.FC<DashboardViewProps> = ({
 
   const [generatingImages, setGeneratingImages] = useState<Set<string>>(new Set());
 
-  // Paywall helper
   const used = preferences.freeGenerationsUsed || 0;
   const isLocked = !preferences.isProMember && used >= 3;
 
@@ -85,7 +85,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
         const insight = await analyzePantryStatus(pantryItems);
         setPantryInsight(insight);
       } catch (e: any) {
-        setPantryInsight({ tip: "Ready to cook something simple?", urgency: 'low' });
+        setPantryInsight({ tip: "Ready to cook something unique?", urgency: 'low' });
       } finally { setIsLoadingInsight(false); }
     };
     fetchInsight();
@@ -115,17 +115,19 @@ const DashboardView: React.FC<DashboardViewProps> = ({
     if (!onRequireAccess("to find recipes")) return;
     if (onConsumeGeneration && !onConsumeGeneration()) return; 
 
+    // AGGRESSIVE EXCLUSION: Add all existing recipes to exclusion list to force variety
+    const existingTitles = [...savedRecipes, ...generatedRecipes].map(r => r.title);
+
     onGenerate({ 
         ...genOptions, 
         recipeCount: 4,
-        complexity: 'Simple'
+        excludeTitles: Array.from(new Set(existingTitles))
     });
   };
 
   const handleVisualize = async (e: React.MouseEvent, recipe: Recipe) => {
       e.stopPropagation();
       if (generatingImages.has(recipe.id)) return;
-      
       setGeneratingImages(prev => new Set(prev).add(recipe.id));
       try {
           const imgData = await generateRecipeImage(recipe.title, recipe.ingredients, recipe.servings);
@@ -151,9 +153,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
         const isExcluded = current.includes(name);
         return {
             ...prev,
-            excludedIngredients: isExcluded 
-                ? current.filter(i => i !== name) 
-                : [...current, name]
+            excludedIngredients: isExcluded ? current.filter(i => i !== name) : [...current, name]
         };
     });
   };
@@ -177,7 +177,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
               <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:scale-110 transition-transform"><Activity size={28} /></div>
               <p className="text-[8px] font-black uppercase tracking-[0.4em] text-primary-500 mb-1">Cooking Tip</p>
               <h3 className="text-white text-sm md:text-lg font-black leading-snug italic font-serif tracking-tight line-clamp-2">
-                {isLoadingInsight ? "Checking your pantry..." : (pantryInsight?.tip || "Ready to cook something simple?")}
+                {isLoadingInsight ? "Checking your pantry..." : (pantryInsight?.tip || "Ready to cook something unique?")}
               </h3>
           </div>
           <div className="bg-[#0c1220] rounded-2xl md:rounded-[2rem] p-4 md:p-6 border border-white/5 shadow-xl flex flex-col justify-between">
@@ -211,11 +211,10 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                           <div className="p-2 bg-primary-500 rounded-xl text-white shadow-xl">
                               <Search size={18} />
                           </div>
-                          <h2 className="text-lg md:text-xl font-black font-serif text-white tracking-tighter italic uppercase">Curation Request</h2>
+                          <h2 className="text-lg md:text-xl font-black font-serif text-white tracking-tighter italic uppercase">Curation Engine</h2>
                        </div>
 
-                       {/* THE CIRCLE THING: Usage Tracker */}
-                       <div className="flex items-center gap-3 bg-slate-900/50 p-2 pr-4 rounded-2xl border border-white/5">
+                       <div className="flex items-center gap-3 bg-slate-900/50 p-2 pr-4 rounded-2xl border border-white/5 group">
                            <div className="relative w-10 h-10 flex items-center justify-center">
                                <svg className="w-full h-full -rotate-90">
                                    <circle cx="20" cy="20" r="16" className="stroke-slate-800 fill-none" strokeWidth="3" />
@@ -229,14 +228,12 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                                    />
                                </svg>
                                <div className="absolute inset-0 flex items-center justify-center">
-                                   {preferences.isProMember ? <Crown size={12} className="text-primary-400" /> : (isLocked ? <Lock size={12} className="text-rose-500" /> : <span className="text-[10px] font-black text-white">{used}/3</span>)}
+                                   {preferences.isProMember ? <Crown size={12} className="text-primary-400" /> : (isLocked ? <Lock size={12} className="text-rose-500" /> : <RefreshCw size={12} className="text-primary-500 animate-spin-slow" />)}
                                </div>
                            </div>
                            <div className="flex flex-col">
-                               <span className="text-[7px] font-black uppercase tracking-widest text-slate-500">Cycle Status</span>
-                               <span className={`text-[9px] font-black uppercase tracking-widest ${isLocked ? 'text-rose-400' : 'text-white'}`}>
-                                   {preferences.isProMember ? 'Elite Access' : (isLocked ? 'Limit Reached' : 'Standard Free')}
-                               </span>
+                               <span className="text-[7px] font-black uppercase tracking-widest text-slate-500">Variety Boost</span>
+                               <span className="text-[9px] font-black uppercase tracking-widest text-white">Active</span>
                            </div>
                        </div>
                   </div>
@@ -249,12 +246,9 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                                   <textarea 
                                     value={genOptions.customRequest || ''} 
                                     onChange={(e) => setGenOptions({...genOptions, customRequest: e.target.value})} 
-                                    placeholder="e.g. 'Pasta with white sauce'..." 
+                                    placeholder="Challenge the chef! e.g. 'Street food style with bold spice'..." 
                                     className="w-full bg-slate-900 border border-white/10 rounded-2xl md:rounded-[2rem] p-5 md:p-6 outline-none font-black text-white h-24 md:h-32 resize-none text-sm md:text-base focus:border-primary-500 transition-all shadow-inner placeholder:text-slate-700" 
                                   />
-                                  <div className="absolute bottom-4 right-5 flex items-center gap-2 text-[7px] font-black uppercase text-slate-600 tracking-widest">
-                                    <SparklesIcon size={10} /> Neural Studio
-                                  </div>
                                </div>
                            </div>
 
@@ -327,7 +321,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({
                     }`}
                   >
                       {isGenerating ? <Loader2Icon size={18} className="animate-spin" /> : (isLocked ? <Crown size={18} /> : <SparklesIcon size={18} />)}
-                      {isGenerating ? `Curation Cycle Active...` : (isLocked ? `Unlock Unlimited Elite` : `Design Recipes`)}
+                      {isGenerating ? `Synthesizing Variations...` : (isLocked ? `Unlock Elite Variety` : `Design Recipes`)}
                   </button>
               </div>
           </div>
@@ -336,8 +330,8 @@ const DashboardView: React.FC<DashboardViewProps> = ({
               {generatedRecipes.length === 0 && !isGenerating && (
                 <div className="py-16 md:py-24 text-center border-2 border-dashed border-white/5 rounded-[2rem] md:rounded-[3rem] bg-white/5">
                     <UtensilsIcon size={40} className="mx-auto mb-5 text-white/5" />
-                    <h3 className="text-xl md:text-2xl font-black font-serif text-white mb-2 italic tracking-tight uppercase leading-none">Awaiting Manifest</h3>
-                    <p className="text-slate-500 font-bold text-[8px] uppercase tracking-[0.4em]">Initialize a curation cycle above.</p>
+                    <h3 className="text-xl md:text-2xl font-black font-serif text-white mb-2 italic tracking-tight uppercase leading-none">Fresh Ideas Await</h3>
+                    <p className="text-slate-500 font-bold text-[8px] uppercase tracking-[0.4em]">Initialize the cycle for a variety check.</p>
                 </div>
               )}
               {generatedRecipes.map(recipe => {

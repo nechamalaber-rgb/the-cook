@@ -160,12 +160,12 @@ const ShoppingListView: React.FC<ShoppingListViewProps> = ({
            setStatus('reveal');
         } else {
            setStatus('idle');
-           setErrorMessage("Couldn't generate a valid plan. Try adding more details to your request.");
+           setErrorMessage("COULDN'T GENERATE A VALID PLAN. TRY ADDING MORE DETAILS TO YOUR REQUEST.");
         }
     } catch (err) { 
         console.error("Plan generation error:", err);
         setStatus('idle');
-        setErrorMessage("Service Interruption. Please try again in a moment.");
+        setErrorMessage("SERVICE INTERRUPTION. PLEASE TRY AGAIN IN A MOMENT.");
     }
   };
 
@@ -361,7 +361,7 @@ const ShoppingListView: React.FC<ShoppingListViewProps> = ({
 
       {activeView === 'cart' ? (
         <div className="space-y-8">
-            <div className={`bg-[#050505] rounded-[2.5rem] p-6 md:p-10 border border-white/5 shadow-2xl relative overflow-hidden`} id="orchestrate-manifest-section">
+            <div className={`bg-[#0c1220]/60 backdrop-blur-xl rounded-[2.5rem] p-6 md:p-10 border border-white/5 shadow-2xl relative overflow-hidden`} id="orchestrate-manifest-section">
                 <div className="relative z-10">
                     {status === 'idle' && (
                         <div className="animate-fade-in space-y-8">
@@ -377,19 +377,19 @@ const ShoppingListView: React.FC<ShoppingListViewProps> = ({
                                 </div>
                             </div>
 
-                            <div className="relative flex bg-[#0c1220] border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl" id="cart-chat-input">
+                            <div className="relative flex bg-[#0c1220]/80 border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl transition-all focus-within:border-primary-500/50" id="cart-chat-input">
                                 <input 
                                     type="text" value={chatInput} onChange={e => setChatInput(e.target.value)}
-                                    placeholder="e.g. 5 dinners for under $20 each..."
-                                    className="flex-1 bg-transparent px-8 py-6 outline-none text-white font-bold text-base placeholder:text-white/20"
+                                    placeholder="a breakfast for 2 people simple easy"
+                                    className="flex-1 bg-transparent px-8 py-6 outline-none text-white font-bold text-base placeholder:text-white/20 italic"
                                     onKeyDown={e => e.key === 'Enter' && handleChatPlan()}
                                 />
-                                <button onClick={handleChatPlan} className="bg-primary-600 px-8 flex items-center justify-center text-white hover:bg-primary-500 transition-colors"><Send size={20} /></button>
+                                <button onClick={handleChatPlan} className="px-8 flex items-center justify-center text-primary-400 hover:text-white transition-colors"><Send size={24} /></button>
                             </div>
                             
                             {errorMessage && (
-                                <div className="flex items-center justify-center gap-2 p-4 bg-rose-500/10 border border-rose-500/30 rounded-2xl text-rose-400 text-xs font-bold uppercase tracking-widest animate-fade-in">
-                                    <AlertCircle size={16} /> {errorMessage}
+                                <div className="flex items-center justify-center gap-3 p-5 bg-rose-950/30 border border-rose-500/20 rounded-2xl text-rose-400 text-[10px] font-black uppercase tracking-[0.2em] animate-fade-in">
+                                    <AlertCircle size={20} className="shrink-0" /> {errorMessage}
                                 </div>
                             )}
                         </div>
@@ -398,14 +398,14 @@ const ShoppingListView: React.FC<ShoppingListViewProps> = ({
                     {status === 'loading' && (
                         <div className="py-24 text-center animate-fade-in flex flex-col items-center">
                             <Loader2 size={40} className="animate-spin text-primary-500 mb-6" />
-                            <h4 className="text-white font-black uppercase tracking-[0.4em] text-xs">AI is designing manifest...</h4>
+                            <h4 className="text-white font-black uppercase tracking-[0.4em] text-xs">AI IS DESIGNING MANIFEST...</h4>
                         </div>
                     )}
 
                     {status === 'reveal' && culinaryConcepts.length > 0 && (
                         <div className="animate-slide-up space-y-8">
                             <div className="flex items-center justify-between">
-                                <h3 className="text-2xl font-black text-white font-serif">Proposed Concepts ({culinaryConcepts.length})</h3>
+                                <h3 className="text-2xl font-black text-white font-serif uppercase tracking-tight italic">Proposed Concepts ({culinaryConcepts.length})</h3>
                                 <button onClick={() => { setStatus('idle'); setCulinaryConcepts([]); }} className="text-slate-400 hover:text-white transition-colors"><X size={24} /></button>
                             </div>
                             
@@ -461,76 +461,74 @@ const ShoppingListView: React.FC<ShoppingListViewProps> = ({
                 </div>
             </div>
 
-            {/* MAIN SHOPPING LIST */}
-            <div className="space-y-6">
-                <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                    <div className="flex items-center gap-2 bg-white dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
-                        <button onClick={() => setViewGrouping('category')} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${viewGrouping === 'category' ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white' : 'text-slate-400'}`}>Category</button>
-                        <button onClick={() => setViewGrouping('store')} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${viewGrouping === 'store' ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white' : 'text-slate-400'}`}>Store</button>
-                        <button onClick={() => setViewGrouping('source')} className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${viewGrouping === 'source' ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white' : 'text-slate-400'}`}>Source</button>
-                    </div>
-                    
-                    <div className="flex gap-2 w-full md:w-auto">
-                        <button id="cart-walmart-sync" onClick={() => syncToWalmart()} className="px-5 py-3 bg-[#0071ce] text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:brightness-110 transition-all flex items-center gap-2">
-                             Walmart Sync <ExternalLink size={14} />
-                        </button>
-                        <button onClick={() => setIsBulkAdding(true)} className="px-5 py-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl font-black text-[10px] uppercase tracking-widest hover:scale-105 transition-all flex items-center gap-2">
-                             <Plus size={14} /> Add Items
-                        </button>
-                    </div>
+            {/* MAIN SHOPPING LIST ACTIONS */}
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-900/30 p-4 rounded-3xl border border-white/5 backdrop-blur-sm">
+                <div className="flex items-center bg-[#0c1220] p-1 rounded-2xl border border-white/10 shadow-inner">
+                    <button onClick={() => setViewGrouping('category')} className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewGrouping === 'category' ? 'bg-primary-500 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}>Category</button>
+                    <button onClick={() => setViewGrouping('store')} className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewGrouping === 'store' ? 'bg-primary-500 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}>Store</button>
+                    <button onClick={() => setViewGrouping('source')} className={`px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${viewGrouping === 'source' ? 'bg-primary-500 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}>Source</button>
                 </div>
+                
+                <div className="flex gap-3 w-full md:w-auto">
+                    <button id="cart-walmart-sync" onClick={() => syncToWalmart()} className="flex-1 md:flex-none px-6 py-3.5 bg-primary-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-primary-500 transition-all flex items-center justify-center gap-3 shadow-lg">
+                         WALMART SYNC <ExternalLink size={16} />
+                    </button>
+                    <button onClick={() => setIsBulkAdding(true)} className="flex-1 md:flex-none px-6 py-3.5 bg-slate-800 text-slate-300 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-700 transition-all flex items-center justify-center gap-3">
+                         <Plus size={18} /> ADD ITEMS
+                    </button>
+                </div>
+            </div>
 
-                <div className="space-y-8">
-                    {sortedCategories.map(group => {
-                        const groupItems = groupedItems[group];
-                        // Calculate total for this group
-                        const groupTotal = groupItems.reduce((sum, item) => sum + ((item.price || 0) * parseQuantityValue(item.quantity).num), 0);
-                        return (
-                            <div key={group} className="space-y-4">
-                                <div className="flex justify-between items-end px-4">
-                                    <h3 className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">{group}</h3>
-                                    <span className="text-[10px] font-black text-slate-500 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg">${groupTotal.toFixed(2)}</span>
-                                </div>
-                                <div className="grid gap-3">
-                                    {groupItems.map(item => (
-                                        <div key={item.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-[1.8rem] flex items-center justify-between shadow-sm group/item">
-                                            <div className="flex items-center gap-5">
-                                                <button 
-                                                    onClick={() => toggleCheck(item.id)}
-                                                    className={`w-7 h-7 rounded-xl border-2 flex items-center justify-center transition-all ${item.checked ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg' : 'border-slate-200 dark:border-slate-700'}`}
-                                                >
-                                                    {item.checked && <Check size={16} />}
-                                                </button>
-                                                <div>
-                                                    <h4 className={`font-black text-sm uppercase tracking-tight ${item.checked ? 'text-slate-300 dark:text-slate-600 line-through' : 'text-slate-900 dark:text-white'}`}>{item.name}</h4>
-                                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">{item.quantity} • {item.store || 'Standard Store'}</p>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-4">
-                                                <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700">
-                                                    <button onClick={() => adjustQuantity(item.id, -1)} className="p-1 text-slate-400 hover:text-rose-500"><Minus size={14}/></button>
-                                                    <span className="text-xs font-black text-slate-900 dark:text-white px-2">{parseQuantityValue(item.quantity).num}</span>
-                                                    <button onClick={() => adjustQuantity(item.id, 1)} className="p-1 text-slate-400 hover:text-emerald-500"><Plus size={14}/></button>
-                                                </div>
-                                                <span className="text-[10px] font-bold text-slate-500 w-12 text-right">
-                                                    ${((item.price || 0) * parseQuantityValue(item.quantity).num).toFixed(2)}
-                                                </span>
-                                                <button onClick={() => deleteItem(item.id)} className="p-2 text-slate-200 hover:text-rose-500 opacity-0 group-hover/item:opacity-100 transition-all"><Trash2 size={18}/></button>
+            {/* SHOPPING LIST CONTENT */}
+            <div className="space-y-8 pb-32">
+                {sortedCategories.map(group => {
+                    const groupItems = groupedItems[group];
+                    const groupTotal = groupItems.reduce((sum, item) => sum + ((item.price || 0) * parseQuantityValue(item.quantity).num), 0);
+                    return (
+                        <div key={group} className="space-y-4">
+                            <div className="flex justify-between items-end px-4">
+                                <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 italic">{group}</h3>
+                                <span className="text-[9px] font-black text-slate-600 bg-white/5 px-2 py-1 rounded-lg border border-white/5">${groupTotal.toFixed(2)}</span>
+                            </div>
+                            <div className="grid gap-3">
+                                {groupItems.map(item => (
+                                    <div key={item.id} className="bg-[#0c1220] border border-white/5 p-5 rounded-[1.8rem] flex items-center justify-between shadow-xl group/item hover:border-primary-500/20 transition-all">
+                                        <div className="flex items-center gap-5">
+                                            <button 
+                                                onClick={() => toggleCheck(item.id)}
+                                                className={`w-7 h-7 rounded-xl border-2 flex items-center justify-center transition-all ${item.checked ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg' : 'border-slate-700'}`}
+                                            >
+                                                {item.checked && <Check size={16} />}
+                                            </button>
+                                            <div>
+                                                <h4 className={`font-black text-sm uppercase tracking-tight italic ${item.checked ? 'text-slate-600 line-through' : 'text-white'}`}>{item.name}</h4>
+                                                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1">{item.quantity} • {item.store || 'Standard Store'}</p>
                                             </div>
                                         </div>
-                                    ))}
-                                </div>
+                                        <div className="flex items-center gap-4">
+                                            <div className="flex items-center gap-2 bg-slate-900 p-1.5 rounded-xl border border-white/5 shadow-inner">
+                                                <button onClick={() => adjustQuantity(item.id, -1)} className="p-1 text-slate-500 hover:text-rose-500"><Minus size={14}/></button>
+                                                <span className="text-xs font-black text-white px-2">{parseQuantityValue(item.quantity).num}</span>
+                                                <button onClick={() => adjustQuantity(item.id, 1)} className="p-1 text-slate-500 hover:text-emerald-500"><Plus size={14}/></button>
+                                            </div>
+                                            <span className="text-[10px] font-black text-slate-400 w-12 text-right">
+                                                ${((item.price || 0) * parseQuantityValue(item.quantity).num).toFixed(2)}
+                                            </span>
+                                            <button onClick={() => deleteItem(item.id)} className="p-2 text-slate-700 hover:text-rose-500 opacity-0 group-hover/item:opacity-100 transition-all"><Trash2 size={18}/></button>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
-                        );
-                    })}
-                </div>
+                        </div>
+                    );
+                })}
             </div>
 
             {items.length > 0 && (
                 <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-40 w-full max-w-[320px] px-4 animate-slide-up">
                     <button 
                         onClick={onPlaceOrder}
-                        className="w-full py-6 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-[2.2rem] font-black text-xs uppercase tracking-[0.4em] shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-4"
+                        className="w-full py-6 bg-white text-slate-950 rounded-[2.2rem] font-black text-xs uppercase tracking-[0.4em] shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-4 ring-4 ring-black/10"
                     >
                         Place Order <ArrowRight size={18} />
                     </button>
@@ -540,26 +538,26 @@ const ShoppingListView: React.FC<ShoppingListViewProps> = ({
       ) : (
         <div className="space-y-6">
             {orderHistory.length === 0 ? (
-                <div className="py-32 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-[3rem]">
-                    <History size={48} className="mx-auto mb-6 text-slate-200 dark:text-slate-800" />
-                    <h3 className="text-2xl font-black font-serif text-slate-900 dark:text-white italic uppercase tracking-tighter">No History Yet.</h3>
-                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-2">Your archived manifests will appear here.</p>
+                <div className="py-32 text-center border-2 border-dashed border-slate-800 rounded-[3rem] bg-slate-900/20">
+                    <History size={48} className="mx-auto mb-6 text-slate-800" />
+                    <h3 className="text-2xl font-black font-serif text-white italic uppercase tracking-tighter">No History Yet.</h3>
+                    <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-2">Your archived manifests will appear here.</p>
                 </div>
             ) : (
                 orderHistory.map(order => (
-                    <div key={order.id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] p-8 shadow-sm">
+                    <div key={order.id} className="bg-[#0c1220] border border-white/5 rounded-[2.5rem] p-8 shadow-sm group">
                         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                             <div>
                                 <div className="flex items-center gap-3 mb-2">
-                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{order.date}</span>
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">{order.date}</span>
                                     <span className={`px-2.5 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest border ${getStatusColor(order.status)}`}>{order.status}</span>
                                 </div>
-                                <h4 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Manifest #{order.id.slice(-6).toUpperCase()}</h4>
-                                <p className="text-xs font-bold text-slate-400 mt-1">{order.items.length} Items Logged</p>
+                                <h4 className="text-xl font-black text-white uppercase tracking-tight italic font-serif">Manifest #{order.id.slice(-6).toUpperCase()}</h4>
+                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">{order.items.length} Items Logged</p>
                             </div>
                             <div className="flex flex-col items-end gap-3 w-full md:w-auto">
-                                <span className="text-3xl font-black text-slate-900 dark:text-white font-serif tracking-tighter">${order.total.toFixed(2)}</span>
-                                <button onClick={() => onReorder(order.items)} className="px-6 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-primary-500 hover:text-white transition-all shadow-sm">Restore Manifest</button>
+                                <span className="text-3xl font-black text-white font-serif tracking-tighter">${order.total.toFixed(2)}</span>
+                                <button onClick={() => onReorder(order.items)} className="px-6 py-2.5 bg-white/5 text-white rounded-xl font-black text-[9px] uppercase tracking-widest hover:bg-primary-500 transition-all shadow-sm border border-white/10">Restore Manifest</button>
                             </div>
                         </div>
                     </div>
@@ -571,22 +569,22 @@ const ShoppingListView: React.FC<ShoppingListViewProps> = ({
       {/* BULK ADD MODAL */}
       {isBulkAdding && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-950/95 backdrop-blur-md p-6 animate-fade-in">
-              <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-[3rem] p-10 shadow-2xl border border-slate-200 dark:border-slate-800 animate-slide-up">
+              <div className="bg-[#0c1220] w-full max-w-lg rounded-[3rem] p-10 shadow-2xl border border-white/10 animate-slide-up">
                   <div className="flex justify-between items-center mb-8">
-                      <h2 className="text-3xl font-black font-serif text-slate-900 dark:text-white italic tracking-tighter">Quick Import.</h2>
-                      <button onClick={() => setIsBulkAdding(false)} className="p-2 text-slate-400 hover:text-rose-500 transition-colors"><X size={32}/></button>
+                      <h2 className="text-3xl font-black font-serif text-white italic tracking-tighter uppercase">Quick Import.</h2>
+                      <button onClick={() => setIsBulkAdding(false)} className="p-2 text-slate-500 hover:text-rose-500 transition-colors"><X size={32}/></button>
                   </div>
                   <div className="space-y-6">
                       <textarea 
                         value={bulkText} 
                         onChange={e => setBulkText(e.target.value)} 
                         placeholder="e.g. 2 packs of eggs, organic milk, 3lb beef..." 
-                        className="w-full h-48 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 outline-none font-bold text-slate-900 dark:text-white focus:border-primary-500 transition-all resize-none shadow-inner" 
+                        className="w-full h-48 bg-slate-900 border border-white/10 rounded-2xl p-6 outline-none font-bold text-white focus:border-primary-500 transition-all resize-none shadow-inner" 
                       />
                       <button 
                         onClick={handleBulkAdd}
                         disabled={isProcessingBulk || !bulkText.trim()}
-                        className="w-full py-5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl font-black text-xs uppercase tracking-[0.3em] shadow-xl hover:scale-105 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                        className="w-full py-5 bg-primary-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.3em] shadow-xl hover:scale-105 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                       >
                         {isProcessingBulk ? <Loader2 className="animate-spin" size={18} /> : <ClipboardList size={18} />}
                         {isProcessingBulk ? 'Processing Intelligence...' : 'Populate Manifest'}
@@ -638,10 +636,8 @@ const ShoppingListView: React.FC<ShoppingListViewProps> = ({
                           </div>
                       </div>
 
-                      {/* NEW: Full Recipe Details */}
                       {culinaryConcepts[activeConceptIndex].fullRecipe && (
                           <div className="space-y-6 pt-4 border-t border-white/5">
-                              {/* Ingredients */}
                               <div className="space-y-3">
                                   <h4 className="text-[10px] font-black uppercase tracking-widest text-primary-500 flex items-center gap-2">
                                       <Utensils size={12}/> Ingredients
@@ -656,7 +652,6 @@ const ShoppingListView: React.FC<ShoppingListViewProps> = ({
                                   </ul>
                               </div>
 
-                              {/* Instructions */}
                               <div className="space-y-3">
                                   <h4 className="text-[10px] font-black uppercase tracking-widest text-primary-500 flex items-center gap-2">
                                       <FileText size={12}/> Instructions
