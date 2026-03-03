@@ -51,10 +51,10 @@ const ChefChat: React.FC<ChefChatProps> = ({ pantryItems, activeRecipe, isOpen, 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-end p-0 sm:p-6 animate-fade-in bg-slate-950/60 backdrop-blur-sm">
-        <div className="bg-slate-900 rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl border border-slate-800 w-full sm:max-w-md h-[90vh] sm:h-[700px] flex flex-col overflow-hidden animate-slide-up">
+    <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center sm:justify-end p-0 sm:p-6 animate-fade-in bg-slate-950/60 backdrop-blur-sm" onClick={onClose}>
+        <div className="bg-slate-900 rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl border border-slate-800 w-full sm:max-w-md h-[85vh] sm:h-[700px] flex flex-col overflow-hidden animate-slide-up" onClick={e => e.stopPropagation()}>
             
-            <div className="bg-slate-950 text-white p-6 flex justify-between items-center shrink-0 border-b border-white/5">
+            <div className="bg-slate-950 text-white p-5 sm:p-6 flex justify-between items-center shrink-0 border-b border-white/5">
                 <div className="flex items-center gap-3">
                     <div className="p-2.5 bg-primary-500 rounded-xl shadow-lg">
                       <ChefHat size={20} className="text-white" />

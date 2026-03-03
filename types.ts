@@ -27,6 +27,7 @@ export interface Ingredient {
   expiryDate?: string; 
   addedDate: string;
   imageUrl?: string;
+  store?: string;
 }
 
 export interface Pantry {
@@ -146,4 +147,14 @@ export interface ChatMessage {
   role: 'user' | 'model';
   text: string;
   timestamp: Date;
+}
+
+export interface AppNotification {
+  id: string;
+  type: 'expiry' | 'system' | 'achievement';
+  title: string;
+  message: string;
+  timestamp: string;
+  read: boolean;
+  itemId?: string;
 }

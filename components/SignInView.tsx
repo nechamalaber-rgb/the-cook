@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, AlertCircle, Loader2, Mail, Send, Inbox, Lock, Eye, EyeOff, KeyRound, RefreshCcw, Sparkles, Smartphone, Hash, ShieldCheck, Keypad, Fingerprint } from 'lucide-react';
+import { X, AlertCircle, Loader2, Mail, Send, Inbox, Lock, Eye, EyeOff, KeyRound, RefreshCcw, Sparkles, Smartphone, Hash, ShieldCheck, Grid3x3, Fingerprint } from 'lucide-react';
 import { Logo } from './Logo';
 import { supabase, isSupabaseConfigured } from '../services/supabase';
 
@@ -12,11 +12,8 @@ interface SignInViewProps {
 
 const SignInView: React.FC<SignInViewProps> = ({ onClose, isModal = false, initialMode = 'login' }) => {
   const [isLogin, setIsLogin] = useState(initialMode === 'login');
-  const [authMethod, setAuthMethod] = useState<'magic' | 'password'>('magic');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isGoogleProcessing, setIsGoogleProcessing] = useState(false);
@@ -62,57 +59,23 @@ const SignInView: React.FC<SignInViewProps> = ({ onClose, isModal = false, initi
     const cleanEmail = email.trim().toLowerCase();
 
     try {
-        if (authMethod === 'magic') {
-            const { error } = await supabase.auth.signInWithOtp({
-                email: cleanEmail,
-                options: {
-                    data: { full_name: name },
-                    shouldCreateUser: true, 
-                    emailRedirectTo: window.location.origin
-                }
-            });
-            
-            if (error) {
-                if (error.message.includes('rate limit')) {
-                    setError('Too many attempts. Please wait 60 seconds.');
-                } else {
-                    throw error;
-                }
+        const { error } = await supabase.auth.signInWithOtp({
+            email: cleanEmail,
+            options: {
+                data: { full_name: name },
+                shouldCreateUser: true, 
+                emailRedirectTo: window.location.origin
+            }
+        });
+        
+        if (error) {
+            if (error.message.includes('rate limit')) {
+                setError('Too many attempts. Please wait 60 seconds.');
             } else {
-                setIsVerifying(true);
+                throw error;
             }
         } else {
-            if (isLogin) {
-                const { error: signInError } = await supabase.auth.signInWithPassword({
-                    email: cleanEmail,
-                    password: password
-                });
-                
-                if (signInError) {
-                    if (signInError.message.toLowerCase().includes('email not confirmed')) {
-                        // Resend the confirmation for the password account
-                        await supabase.auth.resend({ type: 'signup', email: cleanEmail });
-                        setIsVerifying(true);
-                        return;
-                    }
-                    throw signInError;
-                }
-                onClose();
-            } else {
-                const { data, error: signUpError } = await supabase.auth.signUp({
-                    email: cleanEmail,
-                    password: password,
-                    options: {
-                        data: { full_name: name },
-                        emailRedirectTo: window.location.origin
-                    }
-                });
-                
-                if (signUpError) throw signUpError;
-                
-                // Transition to verification screen for password signup
-                setIsVerifying(true);
-            }
+            setIsVerifying(true);
         }
     } catch (err: any) {
         console.error("Auth Error:", err);
@@ -127,19 +90,11 @@ const SignInView: React.FC<SignInViewProps> = ({ onClose, isModal = false, initi
       setError('');
       try {
           const cleanEmail = email.trim().toLowerCase();
-          if (authMethod === 'password') {
-              const { error } = await supabase.auth.resend({
-                  type: 'signup',
-                  email: cleanEmail,
-              });
-              if (error) throw error;
-          } else {
-              const { error } = await supabase.auth.signInWithOtp({
-                  email: cleanEmail,
-                  options: { shouldCreateUser: true }
-              });
-              if (error) throw error;
-          }
+          const { error } = await supabase.auth.signInWithOtp({
+              email: cleanEmail,
+              options: { shouldCreateUser: true }
+          });
+          if (error) throw error;
           alert('A new security code has been dispatched. Please check your spam folder.');
       } catch (e: any) {
           setError(e.message || 'Failed to resend signal.');
@@ -191,26 +146,14 @@ const SignInView: React.FC<SignInViewProps> = ({ onClose, isModal = false, initi
     const cleanEmail = email.trim().toLowerCase();
 
     try {
-        // Try verifying as magiclink first (OTP path)
+        // Verify as magiclink (OTP path)
         const { error: magicError } = await supabase.auth.verifyOtp({
             email: cleanEmail,
             token: code,
             type: 'magiclink'
         });
         
-        if (!magicError) {
-            onClose();
-            return;
-        }
-
-        // Try verifying as signup (Password path)
-        const { error: signupError } = await supabase.auth.verifyOtp({
-            email: cleanEmail,
-            token: code,
-            type: 'signup'
-        });
-
-        if (signupError) throw signupError;
+        if (magicError) throw magicError;
         
         onClose();
     } catch (err: any) {
@@ -310,26 +253,10 @@ const SignInView: React.FC<SignInViewProps> = ({ onClose, isModal = false, initi
           )}
         </button>
 
-        <div className="flex items-center gap-4 mb-6">
+        <div className="flex items-center gap-4 mb-8">
             <div className="h-px bg-white/5 flex-1" />
             <span className="text-[8px] font-black uppercase text-slate-600 tracking-widest">Or Use Email</span>
             <div className="h-px bg-white/5 flex-1" />
-        </div>
-
-        {/* AUTH METHOD TABS */}
-        <div className="bg-slate-900/50 p-1 rounded-xl flex mb-6 border border-white/5 shadow-inner">
-            <button 
-                onClick={() => setAuthMethod('magic')}
-                className={`flex-1 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${authMethod === 'magic' ? 'bg-primary-500 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
-            >
-                <Smartphone size={12} /> OTP Login
-            </button>
-            <button 
-                onClick={() => setAuthMethod('password')}
-                className={`flex-1 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${authMethod === 'password' ? 'bg-primary-500 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
-            >
-                <KeyRound size={12} /> Password
-            </button>
         </div>
 
         <form onSubmit={handleAuthSubmit} className="space-y-4">
@@ -358,25 +285,6 @@ const SignInView: React.FC<SignInViewProps> = ({ onClose, isModal = false, initi
             </div>
           </div>
 
-          {authMethod === 'password' && (
-            <div className="space-y-2 animate-fade-in">
-              <label className="text-[8px] font-black uppercase tracking-widest text-slate-500 ml-1">Secure Password</label>
-              <div className="relative">
-                <input 
-                  required type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} 
-                  className="w-full bg-slate-900 border border-white/10 rounded-xl p-4 text-xs font-bold text-white outline-none focus:border-primary-500 pr-12 shadow-inner" 
-                  placeholder="••••••••" 
-                />
-                <button 
-                  type="button" onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-700 hover:text-white"
-                >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
-            </div>
-          )}
-
           {error && (
             <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-center gap-2 text-rose-500 text-[10px] font-bold animate-fade-in">
               <AlertCircle size={14} /> {error}
@@ -389,7 +297,7 @@ const SignInView: React.FC<SignInViewProps> = ({ onClose, isModal = false, initi
             className="w-full py-4 bg-primary-600 text-white rounded-xl font-black text-[10px] uppercase tracking-[0.3em] shadow-xl hover:bg-primary-500 active:scale-95 transition-all flex items-center justify-center gap-2"
           >
             {isProcessing ? <Loader2 className="animate-spin" size={16}/> : <Send size={14}/>}
-            {authMethod === 'magic' ? (isLogin ? 'Send Security Code' : 'Register & Verify') : (isLogin ? 'Sign In' : 'Create Account & Verify')}
+            {isLogin ? 'Send Security Code' : 'Register & Verify'}
           </button>
         </form>
 

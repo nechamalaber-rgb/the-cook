@@ -24,7 +24,7 @@ import {
   Crown,
   RefreshCw
 } from 'lucide-react';
-import { Ingredient, Recipe, UserPreferences, MealLog, RecipeGenerationOptions } from '../types';
+import { Ingredient, Recipe, UserPreferences, MealLog, RecipeGenerationOptions, AppNotification } from '../types';
 import { analyzePantryStatus, generateRecipeImage } from '../services/geminiService';
 
 interface DashboardViewProps {
@@ -46,6 +46,10 @@ interface DashboardViewProps {
   onAddRecipe?: (recipe: Recipe) => void;
   onAddToShoppingList?: (items: string[]) => void;
   onConsumeGeneration?: () => boolean;
+  notifications?: AppNotification[];
+  onClearNotification?: (id: string) => void;
+  suggestedRequest?: string | null;
+  onClearSuggestedRequest?: () => void;
 }
 
 const DashboardView: React.FC<DashboardViewProps> = ({
@@ -61,7 +65,11 @@ const DashboardView: React.FC<DashboardViewProps> = ({
   onGenerate,
   onRequireAccess,
   onConsumeGeneration,
-  onScheduleMeal
+  onScheduleMeal,
+  notifications = [],
+  onClearNotification,
+  suggestedRequest,
+  onClearSuggestedRequest
 }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'discover' | 'saved'>('discover');
@@ -95,10 +103,17 @@ const DashboardView: React.FC<DashboardViewProps> = ({
     servings: preferences.householdSize || 2,
     mealType: 'Any',
     maxTime: 'Any',
-    customRequest: '',
+    customRequest: suggestedRequest || '',
     complexity: 'Simple',
     excludedIngredients: []
   });
+
+  useEffect(() => {
+    if (suggestedRequest) {
+      setGenOptions(prev => ({ ...prev, customRequest: suggestedRequest }));
+      onClearSuggestedRequest?.();
+    }
+  }, [suggestedRequest, onClearSuggestedRequest]);
 
   const adjustServings = (delta: number) => {
     setGenOptions(prev => ({
@@ -193,6 +208,68 @@ const DashboardView: React.FC<DashboardViewProps> = ({
               </div>
           </div>
       </div>
+
+      {/* Notifications Section */}
+      {notifications.length > 0 && (
+        <div className="space-y-4 animate-fade-in mb-8 px-1">
+          <div className="flex items-center gap-2 px-2">
+            <AlertTriangle size={14} className="text-amber-500" />
+            <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Intelligence Alerts</h3>
+          </div>
+          <div className="grid gap-3">
+            {notifications.filter(n => !n.read).map(notification => (
+              <div key={notification.id} className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 flex items-center justify-between group">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-500">
+                    <ClockIcon size={20} />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black text-white uppercase tracking-widest">{notification.title}</h4>
+                    <p className="text-[10px] text-amber-200/60 font-medium mt-0.5">{notification.message}</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => onClearNotification?.(notification.id)}
+                  className="p-2 text-amber-500/40 hover:text-amber-500 transition-colors"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Notifications Section */}
+      {notifications.length > 0 && (
+        <div className="space-y-4 animate-fade-in mb-8 px-1">
+          <div className="flex items-center gap-2 px-2">
+            <AlertTriangle size={14} className="text-amber-500" />
+            <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Intelligence Alerts</h3>
+          </div>
+          <div className="grid gap-3">
+            {notifications.filter(n => !n.read).map(notification => (
+              <div key={notification.id} className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 flex items-center justify-between group">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-500">
+                    <ClockIcon size={20} />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-black text-white uppercase tracking-widest">{notification.title}</h4>
+                    <p className="text-[10px] text-amber-200/60 font-medium mt-0.5">{notification.message}</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => onClearNotification?.(notification.id)}
+                  className="p-2 text-amber-500/40 hover:text-amber-500 transition-colors"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 md:mb-8 gap-4 px-1">
         <h1 className="text-3xl md:text-5xl font-black tracking-tighter text-white font-serif italic leading-none">Recipes.</h1>

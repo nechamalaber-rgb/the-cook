@@ -78,7 +78,21 @@ export const generateSingleSmartRecipe = async (
   options: RecipeGenerationOptions,
   index: number = 0
 ): Promise<Recipe> => {
-  const pantryList = pantry.map(i => `${i.name} (${i.quantity})`).join(', ');
+  const now = new Date();
+  const pantryList = pantry.map(i => {
+    let expiryInfo = '';
+    if (i.expiryDate) {
+      const expiry = new Date(i.expiryDate);
+      const diffDays = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      if (diffDays <= 3 && diffDays >= 0) {
+        expiryInfo = ` [EXPIRING IN ${diffDays} DAYS - PRIORITIZE THIS]`;
+      } else if (diffDays < 0) {
+        expiryInfo = ` [EXPIRED ${Math.abs(diffDays)} DAYS AGO]`;
+      }
+    }
+    return `${i.name} (${i.quantity})${expiryInfo}`;
+  }).join(', ');
+  
   const forbiddenTitles = options.excludeTitles?.join(', ') || 'None';
   
   const focus = CUISINES[Math.floor(Math.random() * CUISINES.length)];
@@ -99,6 +113,7 @@ export const generateSingleSmartRecipe = async (
         3. REALISTIC TITLES: Use simple, plain English names (e.g., "Crispy Chicken Sandwich", "Beef & Onion Wrap", "Classic Egg Salad").
         4. FORBIDDEN TITLES: Avoid [${forbiddenTitles}]. 
         5. PANTRY: Use [${pantryList}].
+        6. EXPIRATION PRIORITIZATION: If any items are marked as [EXPIRING], you MUST prioritize using them in the recipe to reduce waste.
         
         USER REQUEST: "${options.customRequest || 'Make me something normal and easy for a regular person to eat.'}"
       `,
@@ -201,8 +216,29 @@ export const organizePastedText = async (text: string) => {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `JSON array of {name, quantity, category}: ${text}`,
-      config: { responseMimeType: "application/json" }
+      contents: `Analyze this text and extract a JSON array of items. Each item should have:
+      - name: string (clean name)
+      - quantity: string (e.g. "2 units", "500g")
+      - category: string (Produce, Dairy, Meat, Bakery, Pantry, Frozen, Beverages, Other)
+      - store: string (optional, if mentioned, e.g. "Costco", "Whole Foods", "Trader Joe's")
+      
+      Input text: "${text}"`,
+      config: { 
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              name: { type: Type.STRING },
+              quantity: { type: Type.STRING },
+              category: { type: Type.STRING },
+              store: { type: Type.STRING }
+            },
+            required: ['name', 'category']
+          }
+        }
+      }
     });
     return cleanAndParseJSON(response.text);
   });

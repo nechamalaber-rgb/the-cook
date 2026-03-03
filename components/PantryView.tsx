@@ -11,7 +11,9 @@ import {
   History,
   Tag,
   ClipboardList,
-  ChevronDown
+  ChevronDown,
+  Store,
+  AlertTriangle
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Ingredient, Category, Pantry } from '../types';
@@ -37,9 +39,10 @@ interface PantryViewProps {
   items: Ingredient[];
   setItems: React.Dispatch<React.SetStateAction<Ingredient[]>>;
   onConsumeGeneration?: () => boolean;
+  onSuggestRecipes?: (request: string) => void;
 }
 
-const PantryView: React.FC<PantryViewProps> = ({ items, setItems, onConsumeGeneration }) => {
+const PantryView: React.FC<PantryViewProps> = ({ items, setItems, onConsumeGeneration, onSuggestRecipes }) => {
   const navigate = useNavigate();
   const [isAdding, setIsAdding] = useState(false);
   const [isBulkAdding, setIsBulkAdding] = useState(false);
@@ -48,6 +51,8 @@ const PantryView: React.FC<PantryViewProps> = ({ items, setItems, onConsumeGener
   
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [newItemName, setNewItemName] = useState('');
+  const [newItemStore, setNewItemStore] = useState('');
+  const [newItemExpiry, setNewItemExpiry] = useState('');
   const [bulkText, setBulkText] = useState('');
   const [isProcessingBulk, setIsProcessingBulk] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -82,7 +87,7 @@ const PantryView: React.FC<PantryViewProps> = ({ items, setItems, onConsumeGener
 
     if (existing) {
         setItems(prev => prev.map(i => i.id === existing.id 
-            ? { ...i, quantity: mergeQuantities(i.quantity, '1 Unit') } 
+            ? { ...i, quantity: mergeQuantities(i.quantity, '1 Unit'), store: newItemStore || i.store } 
             : i
         ));
     } else {
@@ -93,11 +98,15 @@ const PantryView: React.FC<PantryViewProps> = ({ items, setItems, onConsumeGener
           category: cat, 
           quantity: '1 Unit',
           addedDate: new Date().toISOString().split('T')[0], 
-          imageUrl: '' 
+          imageUrl: '',
+          store: newItemStore,
+          expiryDate: newItemExpiry || undefined
         };
         setItems(prev => [incoming, ...prev]);
     }
     setNewItemName(''); 
+    setNewItemStore('');
+    setNewItemExpiry('');
     setIsAdding(false);
   };
 
@@ -112,7 +121,8 @@ const PantryView: React.FC<PantryViewProps> = ({ items, setItems, onConsumeGener
             category: item.category as Category || autoCategorize(item.name),
             quantity: item.quantity || '1 Unit',
             addedDate: new Date().toISOString().split('T')[0],
-            imageUrl: ''
+            imageUrl: '',
+            store: item.store || ''
         }));
         setItems(prev => [...newItems, ...prev]);
         setBulkText('');
@@ -144,6 +154,16 @@ const PantryView: React.FC<PantryViewProps> = ({ items, setItems, onConsumeGener
       }
       return filtered;
   }, [items, searchQuery, activeCategoryFilter]);
+
+  const expiringItemsCount = useMemo(() => {
+      const now = new Date();
+      return items.filter(item => {
+          if (!item.expiryDate) return false;
+          const expiry = new Date(item.expiryDate);
+          const diffDays = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+          return diffDays <= 3 && diffDays >= 0;
+      }).length;
+  }, [items]);
 
   return (
     <div className="animate-fade-in pb-20 w-full">
@@ -208,6 +228,28 @@ const PantryView: React.FC<PantryViewProps> = ({ items, setItems, onConsumeGener
            </div>
       </div>
 
+      {expiringItemsCount > 0 && (
+          <div className="mb-6 animate-slide-up">
+              <button 
+               onClick={() => onSuggestRecipes?.("Focus on using ingredients that are about to expire to reduce waste.")}
+               className="w-full bg-gradient-to-r from-amber-500/20 to-amber-600/20 border border-amber-500/30 rounded-2xl p-4 flex items-center justify-between group hover:border-amber-500/50 transition-all"
+              >
+                  <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-amber-500 flex items-center justify-center text-slate-950 shadow-lg group-hover:scale-110 transition-transform">
+                          <Sparkles size={20} />
+                      </div>
+                      <div className="text-left">
+                          <h3 className="text-xs font-black text-white uppercase tracking-widest">Rescue Mission</h3>
+                          <p className="text-[10px] text-amber-200/60 font-medium mt-0.5">You have {expiringItemsCount} items expiring soon. Let's cook them now.</p>
+                      </div>
+                  </div>
+                  <div className="flex items-center gap-2 text-amber-500 font-black text-[9px] uppercase tracking-widest">
+                      Suggest Recipes <ChevronRight size={14} />
+                  </div>
+              </button>
+          </div>
+      )}
+
       {filteredItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
               <PackageCheck size={32} className="text-slate-800 mb-3" />
@@ -221,12 +263,31 @@ const PantryView: React.FC<PantryViewProps> = ({ items, setItems, onConsumeGener
                       const theme = getCategoryTheme(item.category);
                       const isLoadingImage = visualizingIds.has(item.id);
 
+                      const isExpiring = item.expiryDate && (() => {
+                          const now = new Date();
+                          const expiry = new Date(item.expiryDate);
+                          const diffDays = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                          return diffDays <= 3 && diffDays >= 0;
+                      })();
+
                       return (
                           <div 
                             key={item.id} 
                             onClick={() => setViewingItem(item)}
-                            className={`group relative rounded-2xl p-0 border transition-all duration-300 flex flex-col overflow-hidden aspect-square ${theme.bg} ${theme.border} hover:scale-[1.02] shadow-sm cursor-pointer`}
+                            className={`group relative rounded-2xl p-0 border transition-all duration-300 flex flex-col overflow-hidden aspect-square ${theme.bg} ${theme.border} hover:scale-[1.02] shadow-sm cursor-pointer ${isExpiring ? 'ring-2 ring-amber-500 ring-offset-2 ring-offset-[#070b14]' : ''}`}
                           >
+                              {isExpiring && (
+                                  <div className="absolute top-2 left-2 z-20 bg-amber-500 text-slate-950 px-1.5 py-0.5 rounded-md flex items-center gap-1 animate-pulse shadow-lg">
+                                      <AlertTriangle size={8} />
+                                      <span className="text-[7px] font-black uppercase tracking-tighter">Expiring</span>
+                                  </div>
+                              )}
+                              {item.store && (
+                                  <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded-md flex items-center gap-1 z-10 border border-white/5">
+                                      <Store size={8} className="text-white/70" />
+                                      <span className="text-[7px] font-bold text-white uppercase tracking-wider max-w-[60px] truncate">{item.store}</span>
+                                  </div>
+                              )}
                               <div className="absolute inset-0 flex items-center justify-center p-0 bg-slate-800/10">
                                    {(isLoadingImage || !item.imageUrl) ? (
                                        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900/20 backdrop-blur-sm">
@@ -256,14 +317,41 @@ const PantryView: React.FC<PantryViewProps> = ({ items, setItems, onConsumeGener
                   {filteredItems.map(item => {
                       const theme = getCategoryTheme(item.category);
                       const { num } = parseQuantityValue(item.quantity || '1');
+                      
+                      const isExpiring = item.expiryDate && (() => {
+                          const now = new Date();
+                          const expiry = new Date(item.expiryDate);
+                          const diffDays = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                          return diffDays <= 3 && diffDays >= 0;
+                      })();
+
                       return (
-                          <div key={item.id} onClick={() => setViewingItem(item)} className={`flex items-center gap-3 p-2.5 rounded-xl border ${theme.bg} ${theme.border} bg-opacity-30 backdrop-blur-sm transition-all group cursor-pointer`}>
-                              <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-slate-950/40">
+                          <div key={item.id} onClick={() => setViewingItem(item)} className={`flex items-center gap-3 p-2.5 rounded-xl border ${isExpiring ? 'border-amber-500/50 bg-amber-500/5' : theme.bg + ' ' + theme.border} bg-opacity-30 backdrop-blur-sm transition-all group cursor-pointer`}>
+                              <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-slate-950/40 relative">
                                    {item.imageUrl ? <img src={item.imageUrl} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><PackageCheck className="text-slate-800" size={18}/></div>}
+                                   {isExpiring && (
+                                       <div className="absolute inset-0 bg-amber-500/20 flex items-center justify-center">
+                                           <AlertTriangle size={14} className="text-amber-500" />
+                                       </div>
+                                   )}
                               </div>
                               <div className="flex-1">
-                                  <h3 className="text-white font-black uppercase text-sm italic font-serif leading-none">{item.name}</h3>
-                                  <p className={`text-[8px] font-black uppercase tracking-widest ${theme.text}`}>{item.category}</p>
+                                  <div className="flex items-center gap-2">
+                                      <h3 className="text-white font-black uppercase text-sm italic font-serif leading-none">{item.name}</h3>
+                                      {isExpiring && <span className="text-[7px] font-black uppercase px-1.5 py-0.5 bg-amber-500 text-slate-950 rounded-full tracking-tighter">Expiring</span>}
+                                  </div>
+                                  <div className="flex items-center gap-2 mt-0.5">
+                                      <p className={`text-[8px] font-black uppercase tracking-widest ${theme.text}`}>{item.category}</p>
+                                      {item.store && (
+                                          <>
+                                              <span className="text-[8px] text-slate-600">•</span>
+                                              <div className="flex items-center gap-1 text-slate-500">
+                                                  <Store size={8} />
+                                                  <span className="text-[8px] font-bold uppercase tracking-wider">{item.store}</span>
+                                              </div>
+                                          </>
+                                      )}
+                                  </div>
                               </div>
                               <div className="bg-slate-950/40 rounded-lg p-1 flex items-center gap-3 border border-white/5" onClick={e => e.stopPropagation()}>
                                     <button onClick={() => adjustQuantity(item.id, -1)} className="w-6 h-6 rounded-md text-slate-500 hover:text-white"><Minus size={12}/></button>
@@ -292,6 +380,21 @@ const PantryView: React.FC<PantryViewProps> = ({ items, setItems, onConsumeGener
                             autoFocus type="text" value={newItemName} onChange={e => setNewItemName(e.target.value)}
                             placeholder="e.g. Avocado, Whole Milk..."
                             className="w-full bg-slate-900 border border-white/10 rounded-xl p-4 text-sm text-white font-bold outline-none focus:border-primary-500"
+                          />
+                      </div>
+                      <div className="space-y-2">
+                          <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">Store (Optional)</label>
+                          <input 
+                            type="text" value={newItemStore} onChange={e => setNewItemStore(e.target.value)}
+                            placeholder="e.g. Whole Foods, Costco..."
+                            className="w-full bg-slate-900 border border-white/10 rounded-xl p-4 text-sm text-white font-bold outline-none focus:border-primary-500"
+                          />
+                      </div>
+                      <div className="space-y-2">
+                          <label className="text-[9px] font-black uppercase tracking-widest text-slate-500 ml-1">Expiry Date (Optional)</label>
+                          <input 
+                            type="date" value={newItemExpiry} onChange={e => setNewItemExpiry(e.target.value)}
+                            className="w-full bg-slate-900 border border-white/10 rounded-xl p-4 text-sm text-white font-bold outline-none focus:border-primary-500 [color-scheme:dark]"
                           />
                       </div>
                       <button type="submit" className="w-full py-4 bg-white text-slate-950 rounded-xl font-black text-[10px] uppercase tracking-widest shadow-xl hover:bg-primary-500 hover:text-white active:scale-95 transition-all">
@@ -359,17 +462,17 @@ const PantryView: React.FC<PantryViewProps> = ({ items, setItems, onConsumeGener
                       <div className="grid grid-cols-2 gap-4">
                           <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
                               <div className="flex items-center gap-2 text-slate-500 mb-1">
-                                  <History size={12} />
-                                  <span className="text-[9px] font-black uppercase tracking-widest">Logged</span>
+                                  <Store size={12} />
+                                  <span className="text-[9px] font-black uppercase tracking-widest">Source</span>
                               </div>
-                              <p className="text-xs font-bold text-white">{viewingItem.addedDate}</p>
+                              <p className="text-xs font-bold text-white truncate">{viewingItem.store || 'Unknown'}</p>
                           </div>
                           <div className="bg-white/5 p-4 rounded-2xl border border-white/5">
                               <div className="flex items-center gap-2 text-slate-500 mb-1">
                                   <Calendar size={12} />
                                   <span className="text-[9px] font-black uppercase tracking-widest">Expires</span>
                               </div>
-                              <p className="text-xs font-bold text-white">{viewingItem.expiryDate || 'Not Tracked'}</p>
+                              <p className="text-xs font-bold text-white truncate">{viewingItem.expiryDate || 'Not Tracked'}</p>
                           </div>
                       </div>
 

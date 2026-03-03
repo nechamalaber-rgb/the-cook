@@ -4,7 +4,7 @@ import {
   Settings, Cpu, CreditCard, Languages, 
   RefreshCw, Sparkles, Ban, ChefHat, Wallet, Utensils, X, LifeBuoy,
   History, Fingerprint, Lock, FileText, Info, HelpCircle, Trash2, Camera,
-  Beef, Milk, Scale, Zap, Waves, Thermometer, Soup, Play
+  Beef, Milk, Scale, Zap, Waves, Thermometer, Soup, Play, Shield
 } from 'lucide-react';
 import { UserPreferences, MealLog, Pantry } from '../types';
 import { useNavigate } from 'react-router-dom';
@@ -375,6 +375,17 @@ const SettingsView: React.FC<SettingsViewProps> = ({
                             <h4 className="text-lg font-black text-white font-serif italic mb-2 tracking-tight uppercase">Direct Signal</h4>
                             <p className="text-xs text-slate-500 leading-relaxed">Report glitches or request elite features from the engineering team.</p>
                         </a>
+
+                        <button 
+                            onClick={() => navigate('/privacy')}
+                            className="p-8 bg-slate-900 border border-white/5 rounded-[2.5rem] text-left group hover:border-sky-500/30 transition-all"
+                        >
+                            <div className="w-12 h-12 bg-sky-500/10 text-sky-500 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                                <Shield size={24} />
+                            </div>
+                            <h4 className="text-lg font-black text-white font-serif italic mb-2 tracking-tight uppercase">Privacy Manifest</h4>
+                            <p className="text-xs text-slate-500 leading-relaxed">Review how we protect your kitchen data and intelligence.</p>
+                        </button>
 
                         {onRestartWalkthrough && (
                             <button 

@@ -378,7 +378,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                       <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))} className="p-2 text-slate-400"><ChevronRight size={20}/></button>
                   </div>
                   <div className="grid grid-cols-7 gap-1 text-center">
-                      {['S','M','T','W','T','F','S'].map(d => <div key={d} className="text-[8px] font-black text-slate-300 uppercase py-2">{d}</div>)}
+                      {['S','M','T','W','T','F','S'].map((d, i) => <div key={i} className="text-[8px] font-black text-slate-300 uppercase py-2">{d}</div>)}
                       {Array.from({ length: firstDayOfMonth }).map((_, i) => <div key={i} />)}
                       {Array.from({ length: daysInMonth }).map((_, i) => {
                           const dayNum = i + 1;

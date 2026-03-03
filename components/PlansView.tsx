@@ -13,12 +13,33 @@ interface PlansViewProps {
 const PlansView: React.FC<PlansViewProps> = ({ preferences }) => {
   const [isRedirecting, setIsRedirecting] = useState(false);
 
-  const handleUpgrade = () => {
+  const handleUpgrade = async () => {
     setIsRedirecting(true);
-    // Visual pause for psychological reinforcement of security
-    setTimeout(() => {
-        window.location.href = STRIPE_PAYMENT_LINK;
-    }, 1200);
+    try {
+      const response = await fetch("/api/create-checkout-session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          priceId: "price_1QjXyLKVVvW8y1tX8q8q8q8q", // Replace with your actual Stripe Price ID
+          successUrl: `${window.location.origin}/#/success?session_id={CHECKOUT_SESSION_ID}`,
+          cancelUrl: `${window.location.origin}/#/plans`,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+
+      const { url } = await response.json();
+      window.location.href = url;
+    } catch (error) {
+      console.error("Checkout error:", error);
+      setIsRedirecting(false);
+      // Fallback or error message
+      alert("Failed to initiate checkout. Please check your configuration.");
+    }
   };
 
   const featureComparison = [
@@ -47,7 +68,7 @@ const PlansView: React.FC<PlansViewProps> = ({ preferences }) => {
           </p>
       </div>
 
-      <div className="max-w-2xl mx-auto mb-20 relative">
+      <div className="max-w-5xl mx-auto mb-24 relative">
           {isRedirecting && (
               <div className="absolute inset-0 z-50 bg-[#0c1220]/95 backdrop-blur-md rounded-[3.5rem] flex flex-col items-center justify-center text-center p-12">
                   <Loader2 size={48} className="animate-spin text-primary-500 mb-6" />
@@ -57,52 +78,71 @@ const PlansView: React.FC<PlansViewProps> = ({ preferences }) => {
           )}
 
           {/* Unified Pro Plan */}
-          <div className="bg-[#0c1220] p-12 rounded-[3.5rem] border-2 border-primary-500 flex flex-col justify-between shadow-[0_40px_100px_rgba(176,141,106,0.15)] relative transform hover:-translate-y-3 transition-all duration-700 overflow-hidden group">
-              <div className="absolute -top-1 right-0 px-8 py-3 bg-primary-500 text-white rounded-bl-[2.5rem] text-[11px] font-black uppercase tracking-[0.2em] shadow-xl z-20">
+          <div className="bg-[#0c1220] p-8 md:p-16 rounded-[3.5rem] border-2 border-primary-500 shadow-[0_40px_100px_rgba(176,141,106,0.15)] relative transform hover:-translate-y-2 transition-all duration-700 overflow-hidden group">
+              <div className="absolute -top-1 right-0 px-10 py-4 bg-primary-500 text-white rounded-bl-[3rem] text-xs font-black uppercase tracking-[0.3em] shadow-xl z-20">
                   Elite Manifest
               </div>
-              <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-primary-500/5 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 group-hover:scale-125 transition-transform duration-1000"></div>
+              <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary-500/5 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-1000"></div>
 
-              <div>
-                  <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-3xl font-black font-serif text-white uppercase italic tracking-tighter">Elite Pass</h3>
-                      <div className="p-2.5 bg-emerald-500/20 text-emerald-400 rounded-xl border border-emerald-500/30 text-[10px] font-black uppercase tracking-widest animate-pulse">Unlimited</div>
-                  </div>
-                  
-                  <div className="mb-12">
-                      <div className="flex items-baseline gap-3">
-                          <span className="text-8xl font-black font-serif text-white tracking-tighter">$14.99</span>
-                          <span className="text-slate-500 font-bold text-sm uppercase tracking-widest">/ Month</span>
-                      </div>
-                      <p className="text-primary-400 text-[10px] font-black uppercase tracking-widest mt-3 flex items-center gap-2">
-                         <Flame size={14} fill="currentColor" className="animate-bounce" /> Unrestricted Orchestration Logic
-                      </p>
-                  </div>
-
-                  <div className="space-y-5 mb-12">
-                      {[
-                        "Unlimited AI Curation Cycles", 
-                        "Full Macro & Nutritional Synthesis", 
-                        "Elite Kosher & Dietary Logic", 
-                        "Instacart & Walmart Sync Ready",
-                        "Neural Image Generation Support"
-                      ].map((f, i) => (
-                          <div key={i} className="flex items-center gap-4">
-                              <div className="w-6 h-6 rounded-full bg-primary-500 flex items-center justify-center text-white shadow-lg shadow-primary-500/20 shrink-0">
-                                  <Check size={14} strokeWidth={4} />
-                              </div>
-                              <span className="text-sm font-bold text-slate-100 uppercase tracking-tight italic">{f}</span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-20 relative z-10">
+                  {/* Left Column: Value Proposition */}
+                  <div className="flex flex-col justify-between">
+                      <div>
+                          <div className="flex items-center gap-4 mb-8">
+                              <h3 className="text-4xl md:text-5xl font-black font-serif text-white uppercase italic tracking-tighter">Elite Pass</h3>
+                              <div className="px-4 py-1.5 bg-emerald-500/20 text-emerald-400 rounded-full border border-emerald-500/30 text-[9px] font-black uppercase tracking-widest animate-pulse">Unlimited Access</div>
                           </div>
-                      ))}
+                          
+                          <div className="mb-10">
+                              <div className="flex items-baseline gap-2">
+                                  <span className="text-7xl md:text-8xl font-black font-serif text-white tracking-tighter">$14.99</span>
+                                  <span className="text-slate-500 font-bold text-sm uppercase tracking-widest">/ Month</span>
+                              </div>
+                              <p className="text-primary-400 text-xs font-black uppercase tracking-widest mt-6 flex items-center gap-3">
+                                 <Flame size={16} fill="currentColor" className="animate-bounce" /> Unrestricted Orchestration Logic
+                              </p>
+                          </div>
+                          
+                          <p className="text-slate-400 text-sm leading-loose font-medium max-w-sm">
+                              Unlock the full potential of the studio. Infinite generations, precision dietary controls, and priority access to new culinary models.
+                          </p>
+                      </div>
+                  </div>
+
+                  {/* Right Column: Features & Action */}
+                  <div className="flex flex-col justify-center space-y-10">
+                      <div className="space-y-6">
+                          {[
+                            "Unlimited AI Curation Cycles", 
+                            "Full Macro & Nutritional Synthesis", 
+                            "Elite Kosher & Dietary Logic", 
+                            "Instacart & Walmart Sync Ready",
+                            "Neural Image Generation Support",
+                            "Priority Support Channel"
+                          ].map((f, i) => (
+                              <div key={i} className="flex items-center gap-5 group/item">
+                                  <div className="w-8 h-8 rounded-full bg-slate-900 border border-white/10 flex items-center justify-center text-primary-500 shadow-lg group-hover/item:bg-primary-500 group-hover/item:text-white transition-colors shrink-0">
+                                      <Check size={14} strokeWidth={4} />
+                                  </div>
+                                  <span className="text-sm md:text-base font-bold text-slate-300 group-hover/item:text-white transition-colors uppercase tracking-tight italic">{f}</span>
+                              </div>
+                          ))}
+                      </div>
+
+                      <div className="pt-6 border-t border-white/5">
+                          <button 
+                            onClick={handleUpgrade}
+                            disabled={isRedirecting}
+                            className="w-full py-8 bg-white text-slate-950 rounded-[2.5rem] font-black text-sm uppercase tracking-[0.4em] shadow-[0_20px_60px_rgba(255,255,255,0.15)] hover:bg-primary-400 hover:scale-[1.02] transition-all flex items-center justify-center gap-4 group active:scale-95"
+                          >
+                              Initialize Access <Crown size={20} className="group-hover:rotate-12 transition-transform text-primary-500" />
+                          </button>
+                          <p className="text-center text-[9px] font-black uppercase tracking-widest text-slate-600 mt-6">
+                              Secured by Stripe • Cancel Anytime
+                          </p>
+                      </div>
                   </div>
               </div>
-              <button 
-                onClick={handleUpgrade}
-                disabled={isRedirecting}
-                className="w-full py-7 bg-white text-slate-950 rounded-[2.2rem] font-black text-sm uppercase tracking-[0.4em] shadow-[0_20px_40px_rgba(176,141,106,0.3)] hover:bg-primary-400 hover:scale-[1.02] transition-all flex items-center justify-center gap-4 group active:scale-95"
-              >
-                  Initialize Access <Crown size={20} className="group-hover:rotate-12 transition-transform text-primary-500" />
-              </button>
           </div>
       </div>
 

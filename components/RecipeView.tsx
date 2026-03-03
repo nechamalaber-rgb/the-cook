@@ -217,9 +217,10 @@ const RecipeView: React.FC<RecipeViewProps> = ({
                         </button>
                         <button 
                           onClick={() => onToggleSave(selectedRecipe)} 
-                          className="w-full px-12 py-4 bg-white/5 border border-white/10 rounded-2xl text-white font-black text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-3 hover:bg-rose-500 hover:text-white transition-all"
+                          className={`w-full px-12 py-4 border rounded-2xl font-black text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-3 transition-all ${savedRecipes.some(r => r.id === selectedRecipe.id) ? 'bg-rose-500 text-white border-rose-500' : 'bg-white/5 border-white/10 text-white hover:bg-rose-500 hover:text-white'}`}
                         >
-                            <Heart size={18} className={savedRecipes.some(r => r.id === selectedRecipe.id) ? "fill-current" : ""} /> SAVE RECIPE
+                            <Heart size={18} className={savedRecipes.some(r => r.id === selectedRecipe.id) ? "fill-current" : ""} /> 
+                            {savedRecipes.some(r => r.id === selectedRecipe.id) ? 'SAVED' : 'SAVE RECIPE'}
                         </button>
                     </div>
                 </div>
