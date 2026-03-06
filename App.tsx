@@ -2,7 +2,7 @@ import { ShoppingBag, Settings, Home as HomeIcon, Sparkles, Calendar as Calendar
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Routes, Route, NavLink, useLocation, useNavigate, Navigate, HashRouter } from 'react-router-dom';
 import { Logo } from './components/Logo';
-import { Ingredient, ShoppingItem, UserPreferences, Category, Recipe, Pantry, MealLog, RecipeGenerationOptions, Order, OrderStatus, AppNotification } from './types';
+import { Ingredient, ShoppingItem, UserPreferences, Category, Recipe, Pantry, MealLog, RecipeGenerationOptions, Order, OrderStatus } from './types';
 import SignInView from './components/SignInView';
 import ChefChat from './components/ChefChat';
 import DashboardView from './components/DashboardView';
@@ -14,11 +14,24 @@ import CalendarView from './components/CalendarView';
 import AboutView from './components/AboutView';
 import PlansView from './components/PlansView';
 import PaymentSuccessView from './components/PaymentSuccessView';
-import PrivacyPolicyView from './components/PrivacyPolicyView';
 import { Walkthrough } from './components/Walkthrough';
 import { generateSingleSmartRecipe, generateRecipeImage } from './services/geminiService';
 import { autoCategorize, parseQuantityValue, mergeQuantities } from './utils';
-import { supabase, getUserProfile } from './services/supabase';
+import { 
+    supabase, 
+    getUserProfile, 
+    syncPantryToCloud, 
+    loadPantryFromCloud, 
+    saveRecipeToCloud, 
+    deleteRecipeFromCloud,
+    loadSavedRecipesFromCloud, 
+    saveMealLogToCloud, 
+    loadMealLogsFromCloud,
+    deleteMealLogFromCloud,
+    syncShoppingListToCloud,
+    loadShoppingListFromCloud,
+    syncPreferencesToCloud
+} from './services/supabase';
 import { Session } from '@supabase/supabase-js';
 
 const DEFAULT_INITIAL_ITEMS: Ingredient[] = [
@@ -90,7 +103,6 @@ const PrepzuShell: React.FC<PrepzuShellProps> = ({ session }) => {
   const [orderHistory, setOrderHistory] = useState<Order[]>([]);
   const [savedRecipes, setSavedRecipes] = useState<Recipe[]>([]);
   const [mealHistory, setMealHistory] = useState<MealLog[]>([]);
-  const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [generatedRecipes, setGeneratedRecipes] = useState<Recipe[]>([]);
   const [isGeneratingRecipes, setIsGeneratingRecipes] = useState(false);
   const [activeRecipe, setActiveRecipe] = useState<Recipe | null>(null);
@@ -99,8 +111,6 @@ const PrepzuShell: React.FC<PrepzuShellProps> = ({ session }) => {
   const [recipeTab, setRecipeTab] = useState<'discover' | 'saved'>('discover');
   const [preferences, setPreferences] = useState<UserPreferences>(DEFAULT_PREFS);
   const [showWalkthrough, setShowWalkthrough] = useState(false);
-  const [isDataLoaded, setIsDataLoaded] = useState(false);
-  const [suggestedRequest, setSuggestedRequest] = useState<string | null>(null);
 
   const showToast = useCallback((message: string, type: 'success' | 'error' | 'info' = 'success') => {
     setToast({ message, type });
@@ -119,8 +129,6 @@ const PrepzuShell: React.FC<PrepzuShellProps> = ({ session }) => {
 
   useEffect(() => {
     const loadData = async () => {
-        setIsDataLoaded(false); // Reset loading state when user changes
-        
         const userKey = currentUserEmail ? currentUserEmail.replace(/[^a-zA-Z0-9]/g, '_') : 'guest';
         const prefix = `ks_user_${userKey}_`;
 
@@ -138,16 +146,13 @@ const PrepzuShell: React.FC<PrepzuShellProps> = ({ session }) => {
         const localOrders = safeParse(`${prefix}orders`, []);
         const localRecipes = safeParse(`${prefix}recipes`, []);
         const localHistory = safeParse(`${prefix}history`, []);
-        const localNotifications = safeParse(`${prefix}notifications`, []);
 
-        // Clear current state before setting new data
-        setPantries(localPantries);
-        setPreferences({ ...DEFAULT_PREFS, ...localPrefs, darkMode: true });
-        setShoppingList(localShopping);
-        setOrderHistory(localOrders);
-        setSavedRecipes(localRecipes);
-        setMealHistory(localHistory);
-        setNotifications(localNotifications);
+        if (localPantries && localPantries.length > 0) setPantries(localPantries);
+        if (localPrefs) setPreferences({ ...DEFAULT_PREFS, ...localPrefs, darkMode: true });
+        if (localShopping) setShoppingList(localShopping);
+        if (localOrders) setOrderHistory(localOrders);
+        if (localRecipes) setSavedRecipes(localRecipes);
+        if (localHistory) setMealHistory(localHistory);
         
         if (localPantries.length > 0) setActivePantryId(localPantries[0].id);
 
@@ -160,21 +165,90 @@ const PrepzuShell: React.FC<PrepzuShellProps> = ({ session }) => {
                         userName: profile.full_name || prev.userName,
                         isProMember: profile.is_pro_member,
                         subscriptionTier: profile.subscription_tier,
-                        freeGenerationsUsed: profile.free_generations_used || 0
+                        freeGenerationsUsed: profile.free_generations_used || 0,
+                        dietaryRestrictions: profile.dietary_restrictions || prev.dietaryRestrictions,
+                        cuisinePreferences: profile.cuisine_preferences || prev.cuisinePreferences,
+                        allergies: profile.allergies || prev.allergies,
+                        appliances: profile.appliances || prev.appliances,
+                        skillLevel: profile.skill_level || prev.skillLevel,
+                        strictness: profile.strictness || prev.strictness,
+                        isKosher: profile.is_kosher ?? prev.isKosher,
+                        healthGoal: profile.health_goal || prev.healthGoal,
+                        nutritionalGoals: profile.nutritional_goals || prev.nutritionalGoals,
+                        measurementSystem: profile.measurement_system || prev.measurementSystem,
+                        spiceLevel: profile.spice_level || prev.spiceLevel,
+                        budget: profile.budget || prev.budget,
+                        householdSize: profile.household_size || prev.householdSize,
+                        chefPersonality: profile.chef_personality || prev.chefPersonality,
+                        cookingStyle: profile.cooking_style || prev.cookingStyle,
+                        personalTasteBio: profile.personal_taste_bio || prev.personalTasteBio
                     }));
                 }
+
+                // Load other data from cloud
+                const [cloudPantry, cloudShopping, cloudRecipes, cloudHistory] = await Promise.all([
+                    loadPantryFromCloud(currentUserId),
+                    loadShoppingListFromCloud(currentUserId),
+                    loadSavedRecipesFromCloud(currentUserId),
+                    loadMealLogsFromCloud(currentUserId)
+                ]);
+
+                if (cloudPantry.data && cloudPantry.data.length > 0) {
+                    const mappedItems: Ingredient[] = cloudPantry.data.map(i => ({
+                        id: i.id.toString(),
+                        name: i.name,
+                        category: i.category,
+                        quantity: i.quantity,
+                        imageUrl: i.image_url,
+                        addedDate: i.added_at
+                    }));
+                    setPantries([{ id: 'default', name: 'Main Kitchen', items: mappedItems }]);
+                }
+
+                if (cloudShopping.data && cloudShopping.data.length > 0) {
+                    const mappedShopping: ShoppingItem[] = cloudShopping.data.map(i => ({
+                        id: i.item_id,
+                        name: i.name,
+                        category: i.category,
+                        quantity: i.quantity,
+                        price: i.price,
+                        checked: i.checked
+                    }));
+                    setShoppingList(mappedShopping);
+                }
+
+                if (cloudRecipes.data && cloudRecipes.data.length > 0) {
+                    const mappedRecipes: Recipe[] = cloudRecipes.data.map(i => JSON.parse(i.content));
+                    setSavedRecipes(mappedRecipes);
+                }
+
+                if (cloudHistory.data && cloudHistory.data.length > 0) {
+                    const mappedHistory: MealLog[] = cloudHistory.data.map(i => ({
+                        id: i.log_id,
+                        date: i.date,
+                        time: new Date(i.updated_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                        mealType: i.meal_type,
+                        recipeTitle: i.recipe_title,
+                        recipeId: i.recipe_id,
+                        calories: i.calories,
+                        status: i.status
+                    }));
+                    setMealHistory(mappedHistory);
+                }
+
             } catch (e) {
                 console.warn("Cloud sync failed", e);
             }
         }
-        setIsDataLoaded(true);
     };
     loadData();
   }, [currentUserEmail, currentUserId]);
 
-  useEffect(() => {
-    if (!isDataLoaded) return;
+  const activePantry = useMemo(() => {
+    return pantries.find(p => p.id === activePantryId) || { id: 'default', name: 'Main Kitchen', items: [] };
+  }, [pantries, activePantryId]);
 
+  useEffect(() => {
     const userKey = currentUserEmail ? currentUserEmail.replace(/[^a-zA-Z0-9]/g, '_') : 'guest';
     const prefix = `ks_user_${userKey}_`;
     
@@ -184,12 +258,21 @@ const PrepzuShell: React.FC<PrepzuShellProps> = ({ session }) => {
         localStorage.setItem(`${prefix}orders`, JSON.stringify(orderHistory));
         localStorage.setItem(`${prefix}recipes`, JSON.stringify(savedRecipes));
         localStorage.setItem(`${prefix}history`, JSON.stringify(mealHistory));
-        localStorage.setItem(`${prefix}notifications`, JSON.stringify(notifications));
         localStorage.setItem(`${prefix}prefs`, JSON.stringify(preferences));
+
+        // Cloud Sync
+        if (currentUserId) {
+            syncPantryToCloud(currentUserId, activePantry.items);
+            syncShoppingListToCloud(currentUserId, shoppingList);
+            syncPreferencesToCloud(currentUserId, preferences);
+            // Recipes and History are synced via upsert in their respective handlers for efficiency
+            // but we can also do a full sync here if needed, or just rely on the handlers.
+            // For "saves every time", let's ensure the handlers are calling the sync functions.
+        }
     } catch (e) {
-        console.warn("Local storage full", e);
+        console.warn("Local storage or Cloud sync failed", e);
     }
-  }, [pantries, shoppingList, orderHistory, savedRecipes, mealHistory, preferences, currentUserEmail, isDataLoaded]);
+  }, [pantries, shoppingList, orderHistory, savedRecipes, mealHistory, preferences, currentUserEmail, currentUserId, activePantry.items]);
 
   useEffect(() => {
     const hasSeenWalkthrough = localStorage.getItem('ks_onboarding_v3_seen') === 'true';
@@ -198,52 +281,6 @@ const PrepzuShell: React.FC<PrepzuShellProps> = ({ session }) => {
         return () => clearTimeout(timer);
     }
   }, [showWalkthrough]);
-
-  useEffect(() => {
-    if (!isDataLoaded) return;
-    
-    const checkExpirations = () => {
-        const now = new Date();
-        const threeDaysFromNow = new Date();
-        threeDaysFromNow.setDate(now.getDate() + 3);
-        
-        const newNotifications: AppNotification[] = [];
-        
-        pantries.forEach(pantry => {
-            pantry.items.forEach(item => {
-                if (item.expiryDate) {
-                    const expiry = new Date(item.expiryDate);
-                    const diffDays = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-                    
-                    if (diffDays <= 3 && diffDays >= 0) {
-                        const exists = notifications.find(n => n.itemId === item.id && n.type === 'expiry');
-                        if (!exists) {
-                            newNotifications.push({
-                                id: `expiry-${item.id}-${Date.now()}`,
-                                type: 'expiry',
-                                title: 'Item Expiring Soon',
-                                message: `${item.name} will expire in ${diffDays === 0 ? 'today' : diffDays + ' days'}.`,
-                                timestamp: new Date().toISOString(),
-                                read: false,
-                                itemId: item.id
-                            });
-                        }
-                    }
-                }
-            });
-        });
-        
-        if (newNotifications.length > 0) {
-            setNotifications(prev => [...newNotifications, ...prev]);
-        }
-    };
-    
-    checkExpirations();
-  }, [pantries, isDataLoaded]);
-
-  const activePantry = useMemo(() => {
-    return pantries.find(p => p.id === activePantryId) || { id: 'default', name: 'Main Kitchen', items: [] };
-  }, [pantries, activePantryId]);
 
   const handleConsumeGeneration = (): boolean => {
     if (preferences.isProMember) return true;
@@ -399,6 +436,7 @@ const PrepzuShell: React.FC<PrepzuShellProps> = ({ session }) => {
       status: 'completed'
     };
     setMealHistory(prev => [newLog, ...prev]);
+    if (currentUserId) saveMealLogToCloud(currentUserId, newLog);
     showToast("Meal logged");
   };
 
@@ -408,6 +446,7 @@ const PrepzuShell: React.FC<PrepzuShellProps> = ({ session }) => {
       recipeTitle: recipe.title, recipeId: recipe.id, calories: recipe.calories, status: 'planned'
     };
     setMealHistory(prev => [newLog, ...prev]);
+    if (currentUserId) saveMealLogToCloud(currentUserId, newLog);
     showToast(`Scheduled: ${recipe.title}`);
   };
 
@@ -415,10 +454,10 @@ const PrepzuShell: React.FC<PrepzuShellProps> = ({ session }) => {
     setSavedRecipes(prev => {
       const exists = prev.find(r => r.id === recipe.id);
       if (exists) {
-        showToast("Removed from My Recipes", "info");
-        return prev.filter(r => r.id !== recipe.id);
+          if (currentUserId) deleteRecipeFromCloud(currentUserId, recipe.id);
+          return prev.filter(r => r.id !== recipe.id);
       }
-      showToast("Saved to My Recipes");
+      if (currentUserId) saveRecipeToCloud(currentUserId, recipe);
       return [recipe, ...prev];
     });
   };
@@ -447,36 +486,24 @@ const PrepzuShell: React.FC<PrepzuShellProps> = ({ session }) => {
     <div className="min-h-screen bg-[#090e1a] font-sans flex flex-col overflow-x-hidden">
       <Walkthrough show={showWalkthrough} onComplete={completeWalkthrough} />
       
-      <header className="fixed top-0 left-0 right-0 h-14 md:h-24 bg-[#090e1a]/95 border-b border-slate-800/50 z-[100] flex items-center justify-between px-3 md:px-8 backdrop-blur-xl">
-          <div onClick={() => navigate('/pantry')} className="flex items-center gap-2 md:gap-4 cursor-pointer group shrink-0">
-            <div className="p-1.5 md:p-2 bg-primary-500 rounded-xl text-white group-hover:scale-110 transition-transform shadow-lg"><Logo className="w-4 h-4 md:w-6 md:h-6" /></div>
-            <span className="font-serif font-black text-lg md:text-xl text-white tracking-tighter leading-none hidden sm:inline">Prepzu</span>
+      <header className="fixed top-0 left-0 right-0 h-14 md:h-20 bg-[#090e1a]/95 border-b border-slate-800/50 z-[100] flex items-center justify-between px-3 md:px-8 backdrop-blur-xl">
+          <div onClick={() => navigate('/pantry')} className="flex items-center gap-2 cursor-pointer group shrink-0">
+            <div className="p-1 bg-primary-500 rounded-lg text-white group-hover:scale-110 transition-transform shadow-lg"><Logo className="w-5 h-5" /></div>
+            <span className="font-serif font-black text-lg text-white tracking-tighter leading-none hidden sm:inline">Prepzu</span>
           </div>
-          <nav className="flex items-center gap-0.5 md:gap-8 flex-1 justify-center">
-              <NavLink to="/pantry" id="nav-inventory" className={({isActive}) => `px-2 py-1 md:p-3 rounded-xl transition-all ${isActive ? 'text-white bg-white/10 shadow-sm' : 'text-slate-400 hover:text-white'}`}>
-                  <span className="md:hidden text-[9px] font-extrabold uppercase tracking-widest">Pantry</span>
-                  <span className="hidden md:inline text-sm font-bold">Pantry</span>
-              </NavLink>
-              <NavLink to="/studio" id="nav-studio" className={({isActive}) => `px-2 py-1 md:p-3 rounded-xl transition-all ${isActive ? 'text-white bg-white/10 shadow-sm' : 'text-slate-400 hover:text-white'}`}>
-                  <span className="md:hidden text-[9px] font-extrabold uppercase tracking-widest">Recipes</span>
-                  <span className="hidden md:inline text-sm font-bold">Recipes</span>
-              </NavLink>
-              <NavLink to="/calendar" id="nav-calendar" className={({isActive}) => `px-2 py-1 md:p-3 rounded-xl transition-all ${isActive ? 'text-white bg-white/10 shadow-sm' : 'text-slate-400 hover:text-white'}`}>
-                  <span className="md:hidden text-[9px] font-extrabold uppercase tracking-widest">Planner</span>
-                  <span className="hidden md:inline text-sm font-bold">Planner</span>
-              </NavLink>
-              <NavLink to="/shopping" id="nav-cart" className={({isActive}) => `px-2 py-1 md:p-3 rounded-xl transition-all ${isActive ? 'text-white bg-white/10 shadow-sm' : 'text-slate-400 hover:text-white'}`}>
-                  <span className="md:hidden text-[9px] font-extrabold uppercase tracking-widest">Cart</span>
-                  <span className="hidden md:inline text-sm font-bold">Cart</span>
-              </NavLink>
+          <nav className="flex items-center gap-1 md:gap-2">
+              <NavLink to="/pantry" id="nav-inventory" className={({isActive}) => `px-2 py-1 md:px-4 md:py-2 rounded-lg md:rounded-xl text-[10px] md:text-sm font-bold transition-all ${isActive ? 'text-white md:text-primary-600 bg-white/10 md:bg-slate-900/40 shadow-sm' : 'text-slate-400 hover:text-white'}`}>Pantry</NavLink>
+              <NavLink to="/studio" id="nav-studio" className={({isActive}) => `px-2 py-1 md:px-4 md:py-2 rounded-lg md:rounded-xl text-[10px] md:text-sm font-bold transition-all ${isActive ? 'text-white md:text-primary-600 bg-white/10 md:bg-slate-900/40 shadow-sm' : 'text-slate-400 hover:text-white'}`}>Recipes</NavLink>
+              <NavLink to="/calendar" id="nav-calendar" className={({isActive}) => `px-2 py-1 md:px-4 md:py-2 rounded-lg md:rounded-xl text-[10px] md:text-sm font-bold transition-all ${isActive ? 'text-white md:text-primary-600 bg-white/10 md:bg-slate-900/40 shadow-sm' : 'text-slate-400 hover:text-white'}`}>Calendar</NavLink>
+              <NavLink to="/shopping" id="nav-cart" className={({isActive}) => `px-2 py-1 md:px-4 md:py-2 rounded-lg md:rounded-xl text-[10px] md:text-sm font-bold transition-all ${isActive ? 'text-white md:text-primary-600 bg-white/10 md:bg-slate-900/40 shadow-sm' : 'text-slate-400 hover:text-white'}`}>Cart</NavLink>
           </nav>
 
-          <div className="flex items-center gap-2 md:gap-4 shrink-0">
+          <div className="flex items-center gap-2 md:gap-3 shrink-0">
               {currentUserEmail ? (
                 <div className="relative" ref={dropdownRef}>
                   <button 
                     onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-                    className="flex items-center gap-2 md:gap-3 pl-3 pr-2 py-1.5 bg-slate-900/50 hover:bg-slate-900 border border-white/5 rounded-2xl transition-all group"
+                    className="flex items-center gap-3 pl-3 pr-2 py-1.5 bg-slate-900/50 hover:bg-slate-900 border border-white/5 rounded-2xl transition-all group"
                   >
                     <div className="hidden sm:block text-right">
                       <p className="text-[10px] font-black text-white truncate max-w-[120px]">{currentUserEmail}</p>
@@ -510,11 +537,6 @@ const PrepzuShell: React.FC<PrepzuShellProps> = ({ session }) => {
                         Studio Settings
                       </button>
 
-                      <button onClick={() => { setShowWalkthrough(true); setIsProfileMenuOpen(false); }} className="w-full flex items-center gap-3 p-3 text-[11px] font-black uppercase text-slate-400 hover:text-white hover:bg-white/5 rounded-2xl transition-all text-left group">
-                        <div className="p-2 bg-slate-800 rounded-xl group-hover:bg-amber-500 group-hover:text-white transition-colors"><Sparkles size={16} /></div>
-                        Replay Intro
-                      </button>
-
                       <div className="h-px bg-white/5 my-2" />
 
                       <button onClick={handleSignOut} className="w-full flex items-center gap-3 p-3 text-[11px] font-black uppercase text-rose-500 hover:bg-rose-500/10 rounded-2xl transition-all text-left group">
@@ -525,36 +547,34 @@ const PrepzuShell: React.FC<PrepzuShellProps> = ({ session }) => {
                   )}
                 </div>
               ) : (
-                <button 
-                  id="nav-signup-btn" 
-                  onClick={() => { setAuthModalMode('signup'); setIsAuthModalOpen(true); }} 
-                  className="group relative flex items-center gap-2 px-3 md:px-5 py-2 md:py-2.5 bg-gradient-to-r from-primary-600 to-indigo-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-lg hover:shadow-primary-500/40 hover:scale-105 transition-all overflow-hidden border border-white/10"
-                >
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                    <UserPlus size={16} className="text-white md:w-3.5 md:h-3.5" /> 
-                    <span className="relative z-10 hidden md:inline">Join Studio</span>
-                </button>
+                <button id="nav-signup-btn" onClick={() => { setAuthModalMode('signup'); setIsAuthModalOpen(true); }} className="flex items-center gap-2 px-4 py-2 md:px-5 md:py-2 bg-[#c18c5d] md:bg-primary-600 text-white rounded-lg md:rounded-xl font-black text-[9px] md:text-[10px] uppercase tracking-widest shadow-lg hover:scale-105 transition-all whitespace-nowrap"><UserPlus size={14} className="hidden md:inline" /> SIGN UP FREE</button>
               )}
           </div>
       </header>
       
-      <main className="max-w-7xl mx-auto px-4 pb-24 md:px-6 md:pb-24 lg:px-12 pt-20 md:pt-36 flex-1 w-full flex flex-col relative animate-fade-in">
+      <main className="max-w-7xl mx-auto px-4 pb-20 md:px-6 md:pb-24 lg:px-12 pt-32 md:pt-32 flex-1 w-full flex flex-col relative animate-fade-in">
         <Routes>
             <Route path="/" element={<Navigate to="/pantry" replace />} />
-            <Route path="/pantry" element={<PantryView pantries={pantries} activePantryId={activePantryId} setActivePantryId={setActivePantryId} onAddPantry={handleAddPantry} items={activePantry.items} setItems={setActivePantryItems} onConsumeGeneration={handleConsumeGeneration} onSuggestRecipes={(req) => { setSuggestedRequest(req); navigate('/studio'); }} />} />
-            <Route path="/studio" element={<DashboardView pantryItems={activePantry.items} mealHistory={mealHistory} preferences={preferences} setPreferences={setPreferences} savedRecipes={savedRecipes} generatedRecipes={generatedRecipes} setGeneratedRecipes={setGeneratedRecipes} onLogMeal={handleLogMeal} onScheduleMeal={handleScheduleMeal} setActiveRecipe={setActiveRecipe} onToggleSave={handleToggleSave} isGenerating={isGeneratingRecipes} onGenerate={handleGenerateRecipes} onCancelGeneration={() => setIsGeneratingRecipes(false)} onRequireAccess={(a) => true} onAddRecipe={(r) => setSavedRecipes(prev => [r, ...prev])} onAddToShoppingList={addMissingToShopping} onConsumeGeneration={handleConsumeGeneration} notifications={notifications} onClearNotification={(id) => setNotifications(prev => prev.filter(n => n.id !== id))} suggestedRequest={suggestedRequest} onClearSuggestedRequest={() => setSuggestedRequest(null)} />} />
-            <Route path="/calendar" element={<CalendarView mealHistory={mealHistory} savedRecipes={savedRecipes} preferences={preferences} pantryItems={activePantry.items} onScheduleMeal={handleScheduleMeal} setMealHistory={setMealHistory} onUpdateMealStatus={(id, status) => setMealHistory(prev => prev.map(m => m.id === id ? {...m, status} : m))} onDeleteMealLog={(id) => setMealHistory(prev => prev.filter(m => m.id !== id))} onAddToShoppingList={addMissingToShopping} setActiveRecipe={setActiveRecipe} onRequireAccess={(a) => true} onConsumeGeneration={handleConsumeGeneration} />} />
+            <Route path="/pantry" element={<PantryView pantries={pantries} activePantryId={activePantryId} setActivePantryId={setActivePantryId} onAddPantry={handleAddPantry} items={activePantry.items} setItems={setActivePantryItems} onConsumeGeneration={handleConsumeGeneration} />} />
+            <Route path="/studio" element={<DashboardView pantryItems={activePantry.items} mealHistory={mealHistory} preferences={preferences} setPreferences={setPreferences} savedRecipes={savedRecipes} generatedRecipes={generatedRecipes} setGeneratedRecipes={setGeneratedRecipes} onLogMeal={handleLogMeal} onScheduleMeal={handleScheduleMeal} setActiveRecipe={setActiveRecipe} onToggleSave={handleToggleSave} isGenerating={isGeneratingRecipes} onGenerate={handleGenerateRecipes} onCancelGeneration={() => setIsGeneratingRecipes(false)} onRequireAccess={(a) => true} onAddRecipe={(r) => setSavedRecipes(prev => [r, ...prev])} onAddToShoppingList={addMissingToShopping} onConsumeGeneration={handleConsumeGeneration} />} />
+            <Route path="/calendar" element={<CalendarView mealHistory={mealHistory} savedRecipes={savedRecipes} preferences={preferences} pantryItems={activePantry.items} onScheduleMeal={handleScheduleMeal} setMealHistory={setMealHistory} onUpdateMealStatus={(id, status) => {
+                setMealHistory(prev => prev.map(m => m.id === id ? {...m, status} : m));
+                const log = mealHistory.find(m => m.id === id);
+                if (currentUserId && log) saveMealLogToCloud(currentUserId, {...log, status});
+            }} onDeleteMealLog={(id) => {
+                setMealHistory(prev => prev.filter(m => m.id !== id));
+                if (currentUserId) deleteMealLogFromCloud(currentUserId, id);
+            }} onAddToShoppingList={addMissingToShopping} setActiveRecipe={setActiveRecipe} onRequireAccess={(a) => true} onConsumeGeneration={handleConsumeGeneration} />} />
             <Route path="/recipes" element={<RecipeView pantryItems={activePantry.items} setPantryItems={setActivePantryItems} preferences={preferences} onAddToShoppingList={addMissingToShopping} savedRecipes={savedRecipes} onToggleSave={handleToggleSave} mealHistory={mealHistory} onLogMeal={handleLogMeal} selectedRecipe={activeRecipe} setSelectedRecipe={setActiveRecipe} cookingMode={isCookingMode} setCookingMode={setIsCookingMode} currentStep={cookingStep} setCurrentStep={setCookingStep} activeTab={recipeTab} setActiveTab={setRecipeTab} onScheduleMeal={handleScheduleMeal} generatedRecipes={generatedRecipes} setGeneratedRecipes={setGeneratedRecipes} onUpdateRecipe={handleUpdateRecipe} />} />
             <Route path="/shopping" element={<ShoppingListView items={shoppingList} setItems={setShoppingList} orderHistory={orderHistory} onPlaceOrder={handleCompleteOrder} onReorder={handleReorder} onUpdateOrderStatus={handleUpdateOrderStatus} pantryItems={activePantry.items} preferences={preferences} mealHistory={mealHistory} onRequireAccess={(a) => true} onSavePastOrder={(o) => setOrderHistory(prev => [o, ...prev])} onScheduleMeal={handleScheduleMeal} onConsumeGeneration={handleConsumeGeneration} onAddRecipe={(r) => setSavedRecipes(prev => [r, ...prev])} />} />
             <Route path="/settings" element={<SettingsView preferences={preferences} setPreferences={setPreferences} onSignOut={handleSignOut} showToast={showToast} onRestartWalkthrough={handleRestartWalkthrough} />} />
             <Route path="/about" element={<AboutView />} />
-            <Route path="/privacy" element={<PrivacyPolicyView />} />
             <Route path="/plans" element={<PlansView preferences={preferences} />} />
             <Route path="/success" element={<PaymentSuccessView setPreferences={setPreferences} />} />
         </Routes>
       </main>
       
-      <button onClick={() => setIsChatOpen(true)} className="fixed bottom-6 right-6 z-[90] p-3.5 bg-white text-slate-900 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all border-4 border-slate-950"><MessageSquarePlus size={22} /></button>
+      <button onClick={() => setIsChatOpen(true)} className="fixed bottom-24 right-6 z-[100] p-3.5 bg-white text-slate-900 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all border-4 border-slate-950"><MessageSquarePlus size={22} /></button>
       <ChefChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} pantryItems={activePantry.items} activeRecipe={activeRecipe} />
 
       {isAuthModalOpen && (
@@ -623,7 +643,7 @@ const App: React.FC = () => {
 
   return (
     <HashRouter>
-        <PrepzuShell key={session?.user?.id || 'guest'} session={session} />
+        <PrepzuShell session={session} />
     </HashRouter>
   );
 };

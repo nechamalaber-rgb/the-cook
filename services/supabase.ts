@@ -127,3 +127,55 @@ export const loadMealLogsFromCloud = async (userId: string) => {
         .order('date', { ascending: true });
     return { data, error };
 };
+
+// --- SHOPPING LIST ---
+export const syncShoppingListToCloud = async (userId: string, items: any[]) => {
+    const { error: deleteError } = await supabase.from('shopping_list').delete().eq('user_id', userId);
+    if (deleteError) return { error: deleteError };
+
+    const itemsToInsert = items.map(item => ({
+        user_id: userId,
+        item_id: item.id,
+        name: item.name,
+        category: item.category,
+        quantity: item.quantity,
+        price: item.price,
+        checked: item.checked,
+        updated_at: new Date().toISOString()
+    }));
+
+    const { data, error } = await supabase.from('shopping_list').insert(itemsToInsert);
+    return { data, error };
+};
+
+export const loadShoppingListFromCloud = async (userId: string) => {
+    const { data, error } = await supabase
+        .from('shopping_list')
+        .select('*')
+        .eq('user_id', userId);
+    return { data, error };
+};
+
+// --- PREFERENCES ---
+export const syncPreferencesToCloud = async (userId: string, prefs: any) => {
+    const { data, error } = await supabase.from('profiles').update({
+        dietary_restrictions: prefs.dietaryRestrictions,
+        cuisine_preferences: prefs.cuisinePreferences,
+        allergies: prefs.allergies,
+        appliances: prefs.appliances,
+        skill_level: prefs.skillLevel,
+        strictness: prefs.strictness,
+        is_kosher: prefs.isKosher,
+        health_goal: prefs.healthGoal,
+        nutritional_goals: prefs.nutritionalGoals,
+        measurement_system: prefs.measurementSystem,
+        spice_level: prefs.spiceLevel,
+        budget: prefs.budget,
+        household_size: prefs.householdSize,
+        chef_personality: prefs.chefPersonality,
+        cooking_style: prefs.cookingStyle,
+        personal_taste_bio: prefs.personalTasteBio,
+        updated_at: new Date().toISOString()
+    }).eq('id', userId);
+    return { data, error };
+};

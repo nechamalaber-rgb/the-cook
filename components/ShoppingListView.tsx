@@ -348,46 +348,46 @@ const ShoppingListView: React.FC<ShoppingListViewProps> = ({
   }, [items]);
 
   return (
-    <div className="animate-fade-in pb-48 md:pb-32 max-w-5xl mx-auto px-4 lg:px-0 pt-4 md:pt-16 min-h-screen relative">
+    <div className="animate-fade-in pb-48 md:pb-32 max-w-5xl mx-auto px-4 lg:px-0 pt-20 md:pt-32 min-h-screen relative">
       {/* Ambient Background */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] bg-primary-500/5 blur-[120px] pointer-events-none -z-10"></div>
 
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 md:gap-10 mb-8 md:mb-16 px-2">
-        <div className="space-y-3 md:space-y-6">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary-500 rounded-xl text-white shadow-lg shadow-primary-500/20">
-               <ShoppingBag size={20} />
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-10 mb-6 md:mb-16 px-2">
+        <div className="space-y-2 md:space-y-6">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 bg-primary-500 rounded-lg text-white shadow-lg shadow-primary-500/20">
+               <ShoppingBag size={16} />
             </div>
-            <span className="text-xs font-black uppercase tracking-[0.3em] text-primary-500">Supply Hub</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-primary-500">Supply Hub</span>
           </div>
           <h1 className="text-5xl md:text-7xl font-black text-white font-serif tracking-tighter italic leading-none">
-            The <span className="text-slate-600">Cart.</span>
+            The <span className="text-primary-500">Cart.</span>
           </h1>
         </div>
 
         <div className="flex flex-col sm:flex-row gap-6 w-full md:w-auto mt-6 md:mt-0">
-            <div className="bg-[#1a1f2e]/80 backdrop-blur-md p-2 rounded-2xl flex gap-2 shadow-xl border border-white/5 w-full md:w-auto" id="cart-view-toggles">
+            <div className="bg-[#1a1f2e]/80 backdrop-blur-md p-1.5 rounded-2xl flex gap-1 shadow-xl border border-white/5 w-full md:w-auto" id="cart-view-toggles">
                 <button 
                   onClick={() => setActiveView('cart')}
-                  className={`flex-1 md:flex-none px-6 py-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${activeView === 'cart' ? 'bg-primary-500 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'}`}
+                  className={`flex-1 md:flex-none px-6 py-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${activeView === 'cart' ? 'bg-primary-500 text-slate-950 shadow-lg' : 'text-slate-400 hover:text-slate-200'}`}
                 >
-                    <ShoppingBag size={16} /> Active Cart
+                    <ShoppingCart size={16} /> Active Cart
                 </button>
                 <button 
                   onClick={() => setActiveView('history')}
-                  className={`flex-1 md:flex-none px-6 py-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${activeView === 'history' ? 'bg-primary-500 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'}`}
+                  className={`flex-1 md:flex-none px-6 py-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${activeView === 'history' ? 'bg-primary-500 text-slate-950 shadow-lg' : 'text-slate-400 hover:text-slate-200'}`}
                 >
                     <History size={16} /> Saved History
                 </button>
             </div>
             {items.length > 0 && activeView === 'cart' && (
-              <div className="bg-[#1a1f2e]/80 backdrop-blur-md border border-white/5 p-4 md:p-5 rounded-2xl shadow-xl flex items-center gap-5 w-full md:w-auto min-w-[160px]">
-                  <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center relative shrink-0 border border-emerald-500/20">
-                      <Tag size={20} className="text-emerald-500" />
+            <div className="bg-[#1a1f2e]/80 backdrop-blur-md border border-white/5 p-3 md:p-5 rounded-2xl shadow-xl flex items-center gap-4 w-full md:w-auto min-w-[140px]">
+                  <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center relative shrink-0 border border-emerald-500/20">
+                      <Tag size={18} className="text-emerald-500" />
                   </div>
                   <div>
-                      <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest leading-none mb-1.5">Estimated Total</p>
-                      <p className="text-2xl font-black text-white leading-none tracking-tight">${cartStats.totalValue.toFixed(2)}</p>
+                      <p className="text-[8px] font-black uppercase text-slate-500 tracking-widest leading-none mb-1">Estimated Total</p>
+                      <p className="text-xl font-black text-white leading-none tracking-tight">${cartStats.totalValue.toFixed(2)}</p>
                   </div>
               </div>
             )}
@@ -398,35 +398,35 @@ const ShoppingListView: React.FC<ShoppingListViewProps> = ({
         <div className="space-y-8 md:space-y-6">
             {/* COLLAPSIBLE BUILDER SECTION */}
             <div
-              className={`bg-[#0c1220] rounded-[2.5rem] border border-white/5 shadow-2xl relative transition-all duration-500 w-full max-w-xl mx-auto md:mx-0 overflow-hidden group ${
-                status === 'idle' && !isBuilderExpanded ? 'p-6 md:p-8' : 'p-8 md:p-10'
+              className={`bg-[#0c1220] rounded-3xl md:rounded-[2.5rem] border border-white/5 shadow-2xl relative transition-all duration-500 w-full max-w-xl mx-auto md:mx-0 overflow-hidden group ${
+                status === 'idle' && !isBuilderExpanded ? 'p-4 md:p-8' : 'p-5 md:p-10'
               }`}
               id="orchestrate-manifest-section"
             >
                 <div className="absolute top-0 right-0 w-64 h-64 bg-primary-500/5 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2 group-hover:bg-primary-500/10 transition-colors duration-700"></div>
                 <div className="relative z-10">
                     {status === 'idle' && (
-                        <div className="animate-fade-in space-y-6">
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 bg-primary-500/10 rounded-xl text-primary-500 border border-primary-500/20">
-                                    <ChefHat size={24} />
+                        <div className="animate-fade-in space-y-4 md:space-y-6">
+                            <div className="flex items-center gap-3 md:gap-4">
+                                <div className="p-2.5 md:p-3 bg-primary-500 rounded-full text-slate-950 border border-primary-500/20 shadow-lg">
+                                    <ChefHat size={20} className="md:w-6 md:h-6" />
                                 </div>
                                 <div>
-                                    <h2 className="text-xs font-black text-white uppercase tracking-[0.2em] mb-1">Build your shopping list</h2>
-                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">"Try '5 dinners for $20'."</p>
+                                    <h2 className="text-[10px] md:text-xs font-black text-white uppercase tracking-[0.1em] md:tracking-[0.2em] mb-1">Build your shopping list</h2>
+                                    <p className="text-[9px] md:text-[10px] text-slate-500 font-bold italic leading-tight">"Tell the chef what you need. Try '5 dinners' or '5 dinners for under $20 each not using my pantry'."</p>
                                 </div>
                             </div>
 
-                            <div className="relative flex bg-[#1a1f2e] border border-white/10 rounded-2xl overflow-hidden shadow-inner focus-within:border-primary-500/50 transition-all group/input" id="cart-chat-input">
+                            <div className="relative flex bg-[#1a1f2e] border border-white/10 rounded-full overflow-hidden shadow-inner focus-within:border-primary-500/50 transition-all group/input" id="cart-chat-input">
                                 <input 
                                     type="text" value={chatInput} onChange={e => setChatInput(e.target.value)}
-                                    placeholder="Describe what you need..."
+                                    placeholder="e.g. 5 dinners for under $"
                                     className="flex-1 bg-transparent px-6 py-5 outline-none text-white font-bold text-sm placeholder:text-slate-500 placeholder:italic min-w-0"
                                     onKeyDown={e => e.key === 'Enter' && handleChatPlan()}
                                 />
-                                <div className="p-2 flex items-center">
-                                    <button onClick={handleChatPlan} className="w-12 h-12 bg-primary-500 rounded-xl flex items-center justify-center text-white hover:scale-105 transition-all shrink-0 shadow-lg group-focus-within/input:shadow-primary-500/20">
-                                        <Send size={20} />
+                                <div className="p-1.5 md:p-2 flex items-center">
+                                    <button onClick={handleChatPlan} className="w-10 h-10 md:w-12 md:h-12 bg-primary-500 rounded-full flex items-center justify-center text-slate-950 hover:scale-105 transition-all shrink-0 shadow-lg group-focus-within/input:shadow-primary-500/20">
+                                        <Send size={18} className="md:w-5 md:h-5" />
                                     </button>
                                 </div>
                             </div>
@@ -507,19 +507,16 @@ const ShoppingListView: React.FC<ShoppingListViewProps> = ({
 
             {/* MAIN SHOPPING LIST ACTIONS */}
             <div className="flex flex-col md:flex-row justify-between items-center gap-8 md:gap-3 mt-12 md:mt-0 bg-transparent md:bg-slate-900/30 md:p-2 md:rounded-2xl md:border md:border-white/5 md:backdrop-blur-sm">
-                <div className="flex items-center bg-[#1a1f2e] md:bg-[#0c1220] p-1 md:p-0.5 rounded-2xl md:rounded-xl border border-white/5 md:border-white/10 shadow-inner">
-                    <button onClick={() => setViewGrouping('category')} className={`px-6 md:px-3 py-2.5 md:py-2 rounded-xl md:rounded-lg text-[10px] md:text-[9px] font-black uppercase tracking-widest transition-all ${viewGrouping === 'category' ? 'bg-[#1a1f2e] md:bg-primary-500 text-white shadow-md' : 'text-slate-500 hover:text-slate-300'}`}>CATEGORY</button>
-                    <button onClick={() => setViewGrouping('store')} className={`px-6 md:px-3 py-2.5 md:py-2 rounded-xl md:rounded-lg text-[10px] md:text-[9px] font-black uppercase tracking-widest transition-all ${viewGrouping === 'store' ? 'bg-[#1a1f2e] md:bg-primary-500 text-white shadow-md' : 'text-slate-500 hover:text-slate-300'}`}>STORE</button>
+                <div className="flex items-center bg-[#1a1f2e] md:bg-[#0c1220] p-1 md:p-0.5 rounded-full border border-white/5 md:border-white/10 shadow-inner">
+                    <button onClick={() => setViewGrouping('category')} className={`px-6 md:px-3 py-2.5 md:py-2 rounded-full text-[10px] md:text-[9px] font-black uppercase tracking-widest transition-all ${viewGrouping === 'category' ? 'bg-[#0c1220] md:bg-primary-500 text-white shadow-md' : 'text-slate-500 hover:text-slate-300'}`}>CATEGORY</button>
+                    <button onClick={() => setViewGrouping('store')} className={`px-6 md:px-3 py-2.5 md:py-2 rounded-full text-[10px] md:text-[9px] font-black uppercase tracking-widest transition-all ${viewGrouping === 'store' ? 'bg-[#0c1220] md:bg-primary-500 text-white shadow-md' : 'text-slate-500 hover:text-slate-300'}`}>STORE</button>
                 </div>
                 
                 <div className="grid grid-cols-2 md:flex gap-3 w-full md:w-auto max-w-[360px] md:max-w-none">
-                    <button id="cart-walmart-sync" onClick={() => syncToWalmart()} className="col-span-2 md:col-span-1 flex-1 md:flex-none px-4 md:px-3 py-4 md:py-2.5 bg-[#0071ce] text-white rounded-2xl md:rounded-xl font-black text-[10px] md:text-[9px] uppercase tracking-widest hover:bg-[#005fb0] transition-all flex items-center justify-center gap-2 shadow-lg md:shadow-md whitespace-nowrap">
+                    <button id="cart-walmart-sync" onClick={() => syncToWalmart()} className="col-span-2 md:col-span-1 flex-1 md:flex-none px-6 md:px-5 py-4 md:py-3 bg-[#0071ce] text-white rounded-xl font-black text-[10px] md:text-[9px] uppercase tracking-widest hover:bg-[#005fb0] transition-all flex items-center justify-center gap-2 shadow-lg md:shadow-md whitespace-nowrap">
                          WALMART SYNC <ExternalLink size={14} className="md:w-3 md:h-3" />
                     </button>
-                    <button onClick={() => setIsBulkAdding(true)} className="flex-1 md:flex-none px-4 md:px-3 py-4 md:py-2.5 bg-slate-800 text-slate-300 rounded-2xl md:rounded-xl font-black text-[10px] md:text-[9px] uppercase tracking-widest hover:bg-slate-700 hover:text-white transition-all flex items-center justify-center gap-2 shadow-lg md:shadow-md whitespace-nowrap">
-                         <Clipboard size={16} className="md:w-3.5 md:h-3.5" /> PASTE LIST
-                    </button>
-                    <button onClick={() => setIsManualAdding(true)} className="flex-1 md:flex-none px-4 md:px-3 py-4 md:py-2.5 bg-white md:bg-emerald-600 text-slate-900 md:text-white rounded-2xl md:rounded-xl font-black text-[10px] md:text-[9px] uppercase tracking-widest hover:bg-slate-100 md:hover:bg-emerald-500 transition-all flex items-center justify-center gap-2 shadow-lg md:shadow-md whitespace-nowrap">
+                    <button onClick={() => setIsManualAdding(true)} className="col-span-2 md:col-span-1 flex-1 md:flex-none px-6 md:px-5 py-4 md:py-3 bg-white text-slate-950 rounded-xl font-black text-[10px] md:text-[9px] uppercase tracking-widest hover:bg-slate-100 transition-all flex items-center justify-center gap-2 shadow-lg md:shadow-md whitespace-nowrap">
                          <Plus size={16} className="md:w-3.5 md:h-3.5" /> ADD ITEMS
                     </button>
                 </div>

@@ -170,23 +170,23 @@ const PantryView: React.FC<PantryViewProps> = ({ items, setItems, onConsumeGener
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-4 px-1 gap-4">
         <div className="space-y-0.5">
           <div className="flex items-center gap-2 opacity-50">
-             <LayoutGrid size={10} className="text-primary-400" />
-             <span className="text-[8px] font-black uppercase tracking-[0.3em] text-white">Central Hub</span>
+             <LayoutGrid size={10} className="text-white" />
+             <span className="text-[8px] font-black uppercase tracking-[0.5em] text-white">CENTRAL HUB</span>
           </div>
-          <h1 className="text-4xl md:text-6xl font-serif font-black text-white tracking-tighter leading-none italic">Prepzu.</h1>
+          <h1 className="text-5xl md:text-7xl font-serif font-black text-white tracking-tighter leading-none italic opacity-30">Prepzu.</h1>
         </div>
         
         <div className="flex flex-wrap gap-2 w-full md:w-auto items-center">
              <div className="flex-1 md:w-64 relative" id="pantry-search-box">
-                 <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search..." className="w-full bg-[#111827] border border-white/10 outline-none pl-4 pr-10 py-2.5 rounded-xl text-xs font-bold text-white shadow-inner placeholder:text-slate-600 focus:border-primary-500/40" />
-                 <SearchIcon className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-600" size={14} />
+                 <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search" className="w-full bg-[#0c1220] border border-white/5 outline-none pl-4 pr-10 py-3 rounded-xl text-xs font-bold text-white placeholder:text-slate-700 focus:border-white/10 transition-all" />
+                 <SearchIcon className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-700" size={14} />
              </div>
              
              <div className="relative">
                 <button 
                     id="pantry-add-btn"
                     onClick={() => setAddMenuOpen(!addMenuOpen)}
-                    className="flex items-center gap-2 bg-white text-slate-900 px-6 py-2.5 rounded-xl font-black shadow-lg hover:scale-105 active:scale-95 transition-all uppercase tracking-widest text-[9px]"
+                    className="flex items-center gap-2 bg-[#1a1f2e] text-slate-400 px-6 py-3 rounded-xl font-black shadow-lg hover:bg-[#252b3d] active:scale-95 transition-all uppercase tracking-widest text-[10px] border border-white/5"
                 >
                     <Plus size={14}/> Add <ChevronDown size={12} className={`transition-transform ${addMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
@@ -210,12 +210,12 @@ const PantryView: React.FC<PantryViewProps> = ({ items, setItems, onConsumeGener
 
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
            <div className="overflow-x-auto no-scrollbar flex items-center gap-2 py-1">
-                <div className="bg-white/5 p-0.5 rounded-lg flex items-center gap-0.5 border border-white/5">
+                <div className="flex items-center gap-4">
                      {categories.map(cat => (
                          <button
                              key={cat}
                              onClick={() => setActiveCategoryFilter(cat as any)}
-                             className={`px-3 py-1.5 rounded-md text-[8px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeCategoryFilter === cat ? 'bg-primary-500 text-white' : 'text-slate-500 hover:text-slate-300'}`}
+                             className={`px-4 py-2 rounded-md text-[10px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap ${activeCategoryFilter === cat ? 'bg-[#1a1f2e] text-white shadow-lg' : 'text-slate-600 hover:text-slate-400'}`}
                          >
                              {cat}
                          </button>
@@ -270,42 +270,28 @@ const PantryView: React.FC<PantryViewProps> = ({ items, setItems, onConsumeGener
                           return diffDays <= 3 && diffDays >= 0;
                       })();
 
-                      return (
+                       return (
                           <div 
                             key={item.id} 
                             onClick={() => setViewingItem(item)}
-                            className={`group relative rounded-2xl p-0 border transition-all duration-300 flex flex-col overflow-hidden aspect-square ${theme.bg} ${theme.border} hover:scale-[1.02] shadow-sm cursor-pointer ${isExpiring ? 'ring-2 ring-amber-500 ring-offset-2 ring-offset-[#070b14]' : ''}`}
+                            className={`group relative rounded-2xl p-4 border transition-all duration-300 flex flex-col justify-between overflow-hidden aspect-square bg-[#0c1220] border-white/5 hover:border-white/10 shadow-sm cursor-pointer ${isExpiring ? 'ring-1 ring-amber-500/50' : ''}`}
                           >
-                              {isExpiring && (
-                                  <div className="absolute top-2 left-2 z-20 bg-amber-500 text-slate-950 px-1.5 py-0.5 rounded-md flex items-center gap-1 animate-pulse shadow-lg">
-                                      <AlertTriangle size={8} />
-                                      <span className="text-[7px] font-black uppercase tracking-tighter">Expiring</span>
+                              {item.imageUrl && (
+                                  <div className="absolute inset-0 z-0 opacity-80 group-hover:opacity-100 transition-opacity">
+                                      <img src={item.imageUrl} className="w-full h-full object-cover transition-transform duration-[8s] group-hover:scale-110" alt="" />
+                                      <div className="absolute inset-0 bg-gradient-to-b from-[#0c1220]/90 via-[#0c1220]/20 to-[#0c1220]/90" />
                                   </div>
                               )}
-                              {item.store && (
-                                  <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded-md flex items-center gap-1 z-10 border border-white/5">
-                                      <Store size={8} className="text-white/70" />
-                                      <span className="text-[7px] font-bold text-white uppercase tracking-wider max-w-[60px] truncate">{item.store}</span>
-                                  </div>
-                              )}
-                              <div className="absolute inset-0 flex items-center justify-center p-0 bg-slate-800/10">
-                                   {(isLoadingImage || !item.imageUrl) ? (
-                                       <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-slate-900/20 backdrop-blur-sm">
-                                           <Loader2 size={12} className="animate-spin text-primary-500/40" />
-                                       </div>
-                                   ) : (
-                                        <img src={item.imageUrl} className="w-full h-full object-cover opacity-100 transition-transform duration-[4s] group-hover:scale-105" alt="" />
-                                   )}
+
+                              <div className="relative z-10">
+                                  <h3 className="font-black text-white text-xs leading-tight italic uppercase font-serif tracking-tighter drop-shadow-md">{item.name}</h3>
                               </div>
                                    
-                              <div className="absolute inset-x-0 bottom-0 p-3 flex flex-col gap-2 bg-gradient-to-t from-slate-950 via-slate-950/70 to-transparent pt-6">
-                                  <div className="space-y-0.5 pointer-events-none">
-                                      <h3 className="font-black text-white text-[10px] leading-tight italic line-clamp-1 uppercase font-serif tracking-tight">{item.name}</h3>
-                                  </div>
-                                  <div className="bg-slate-900/90 rounded-lg p-1 flex items-center justify-between border border-white/10 shadow-sm" onClick={e => e.stopPropagation()}>
-                                      <button onClick={() => adjustQuantity(item.id, -1)} className="w-6 h-6 rounded-md bg-white/5 flex items-center justify-center text-slate-400 hover:text-rose-500 transition-all"><Minus size={10}/></button>
-                                      <span className="text-[10px] font-black text-white px-1">{num}</span>
-                                      <button onClick={() => adjustQuantity(item.id, 1)} className="w-6 h-6 rounded-md bg-white/5 flex items-center justify-center text-slate-400 hover:text-emerald-500 transition-all"><Plus size={10}/></button>
+                              <div className="relative z-10 mt-auto">
+                                  <div className="bg-[#1a1f2e]/60 backdrop-blur-sm rounded-xl p-1 flex items-center justify-between border border-white/5 shadow-inner" onClick={e => e.stopPropagation()}>
+                                      <button onClick={() => adjustQuantity(item.id, -1)} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-600 hover:text-rose-500 transition-all"><Minus size={12}/></button>
+                                      <span className="text-xs font-black text-white px-1">{num}</span>
+                                      <button onClick={() => adjustQuantity(item.id, 1)} className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-600 hover:text-emerald-500 transition-all"><Plus size={12}/></button>
                                   </div>
                               </div>
                           </div>
